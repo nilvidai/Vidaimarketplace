@@ -126,13 +126,26 @@ const AdminDashboard = () => {
             >
               <tab.icon className="w-5 h-5" />
               <span className="font-medium">{tab.label}</span>
-              {tab.count !== undefined && (
-                <span className="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded-full">
+              {tab.count !== undefined && tab.count > 0 && (
+                <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${
+                  tab.id === 'products' ? 'bg-orange-500 text-white' : 'bg-white/20'
+                }`}>
                   {tab.count}
                 </span>
               )}
             </button>
           ))}
+          
+          <hr className="border-white/10 my-4" />
+          
+          <button
+            onClick={() => navigate('/admin/marketplace')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left sidebar-link text-slate-300 hover:text-white"
+            data-testid="admin-marketplace-link"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            <span className="font-medium">Marketplace</span>
+          </button>
         </nav>
 
         <button
@@ -165,6 +178,12 @@ const AdminDashboard = () => {
                 clinics={clinics} 
                 onDelete={deleteClinic}
                 onAdd={() => setShowClinicModal(true)}
+              />
+            )}
+            {activeTab === 'products' && (
+              <ProductsApprovalTab 
+                products={pendingProducts}
+                onApprove={approveProduct}
               />
             )}
             {activeTab === 'assignments' && (
