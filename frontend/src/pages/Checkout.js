@@ -135,11 +135,20 @@ const Checkout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
             <button
-              onClick={() => navigate('/marketplace/cart')}
+              onClick={() => navigate(-1)}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              data-testid="back-to-cart"
+              data-testid="back-btn"
+              title="Go Back"
             >
               <ArrowLeft className="w-5 h-5 text-slate-700" />
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              data-testid="home-btn"
+              title="Home"
+            >
+              <Home className="w-5 h-5 text-slate-700" />
             </button>
             <h1 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
               Checkout
