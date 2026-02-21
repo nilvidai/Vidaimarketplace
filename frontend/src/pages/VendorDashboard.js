@@ -13,6 +13,7 @@ const VendorDashboard = () => {
   const [activeTab, setActiveTab] = useState('products');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [inventory, setInventory] = useState({ items: [], summary: {} });
   const [loading, setLoading] = useState(true);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -43,6 +44,22 @@ const VendorDashboard = () => {
       showToast('Failed to fetch data', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInventory = async () => {
+    try {
+      const res = await axios.get(`${API}/vendor/inventory`, authHeaders);
+      setInventory(res.data);
+    } catch (err) {
+      showToast('Failed to fetch inventory', 'error');
+    }
+  };
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'inventory') {
+      fetchInventory();
     }
   };
 
