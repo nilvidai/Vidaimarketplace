@@ -274,7 +274,11 @@ class VIDAIMarketplaceAPITester:
         if response and response.status_code == 200:
             result = response.json()
             self.product_id = result.get('id')
-            self.log_test("Create product", True)
+            # Check that product defaults to pending approval
+            if result.get('is_approved') == False:
+                self.log_test("Create product (defaults to pending approval)", True)
+            else:
+                self.log_test("Create product (defaults to pending approval)", False, "Product should default to pending approval")
         else:
             self.log_test("Create product", False, error)
             return
@@ -284,7 +288,12 @@ class VIDAIMarketplaceAPITester:
         if response and response.status_code == 200:
             products = response.json()
             if isinstance(products, list) and len(products) > 0:
-                self.log_test("Get vendor products", True)
+                # Check approval status is visible
+                product = products[0]
+                if 'is_approved' in product:
+                    self.log_test("Get vendor products (with approval status)", True)
+                else:
+                    self.log_test("Get vendor products (with approval status)", False, "Approval status missing")
             else:
                 self.log_test("Get vendor products", False, "No products returned")
         else:
@@ -298,6 +307,170 @@ class VIDAIMarketplaceAPITester:
                 self.log_test("Update product", True)
             else:
                 self.log_test("Update product", False, error)
+
+    def test_product_approval_workflow(self):
+        """Test admin product approval workflow"""
+        print("\n🔍 Testing Product Approval Workflow...")
+        
+        if not self.admin_token or not self.product_id:
+            self.log_test("Product approval workflow", False, "Missing admin token or product ID")
+            return
+            
+        # Get pending products
+        response, error = self.make_request('GET', '/admin/products/pending', token=self.admin_token, expected_status=200)
+        if response and response.status_code == 200:
+            pending_products = response.json()
+            if isinstance(pending_products, list) and len(pending_products) > 0:
+                self.log_test("Get pending products", True)
+            else:
+                self.log_test("Get pending products", False, "No pending products found")
+        else:
+            self.log_test("Get pending products", False, error)
+            
+        # Get all products (admin view)
+        response, error = self.make_request('GET', '/admin/products', token=self.admin_token, expected_status=200)
+        if response and response.status_code == 200:
+            all_products = response.json()
+            if isinstance(all_products, list):
+                self.log_test("Get all products (admin)", True)
+            else:
+                self.log_test("Get all products (admin)", False, "Invalid products response")
+        else:
+            self.log_test("Get all products (admin)", False, error)
+            
+        # Approve product
+        approval_data = {"product_id": self.product_id, "approved": True}
+        response, error = self.make_request('POST', '/admin/products/approve', approval_data, self.admin_token, 200)
+        if response and response.status_code == 200:
+            self.log_test("Approve product", True)
+        else:
+            self.log_test("Approve product", False, error)
+            
+        # Verify product is approved
+        response, error = self.make_request('GET', '/vendor/products', token=self.vendor_token, expected_status=200)
+        if response and response.status_code == 200:
+            products = response.json()
+            approved_product = next((p for p in products if p['id'] == self.product_id), None)
+            if approved_product and approved_product.get('is_approved') == True:
+                self.log_test("Verify product approved", True)
+            else:
+                self.log_test("Verify product approved", False, "Product not marked as approved")
+        else:
+            self.log_test("Verify product approved", False, error)
+
+    def test_admin_marketplace(self):
+        """Test admin marketplace endpoints"""
+        print("\n🔍 Testing Admin Marketplace...")
+        
+        if not self.admin_token:
+            self.log_test("Admin marketplace", False, "No admin token available")
+            return
+            
+        # Get marketplace vendors
+        response, error = self.make_request('GET', '/admin/marketplace/vendors', token=self.admin_token, expected_status=200)
+        if response and response.status_code == 200:
+            vendors = response.json()
+            if isinstance(vendors, list):
+                self.log_test("Get marketplace vendors (admin)", True)
+            else:
+                self.log_test("Get marketplace vendors (admin)", False, "Invalid vendors response")
+        else:
+            self.log_test("Get marketplace vendors (admin)", False, error)
+            
+        # Get marketplace categories
+        response, error = self.make_request('GET', '/admin/marketplace/categories', token=self.admin_token, expected_status=200)
+        if response and response.status_code == 200:
+            categories = response.json()
+            if isinstance(categories, list):
+                self.log_test("Get marketplace categories (admin)", True)
+            else:
+                self.log_test("Get marketplace categories (admin)", False, "Invalid categories response")
+        else:
+            self.log_test("Get marketplace categories (admin)", False, error)
+            
+        # Get marketplace products
+        response, error = self.make_request('GET', '/admin/marketplace/products', token=self.admin_token, expected_status=200)
+        if response and response.status_code == 200:
+            products = response.json()
+            if isinstance(products, list):
+                self.log_test("Get marketplace products (admin)", True)
+            else:
+                self.log_test("Get marketplace products (admin)", False, "Invalid products response")
+        else:
+            self.log_test("Get marketplace products (admin)", False, error)
+            
+        # Get vendor products (admin view)
+        if self.vendor_id:
+            response, error = self.make_request('GET', f'/admin/marketplace/vendors/{self.vendor_id}/products', token=self.admin_token, expected_status=200)
+            if response and response.status_code == 200:
+                products = response.json()
+                if isinstance(products, list):
+                    self.log_test("Get vendor products (admin marketplace)", True)
+                else:
+                    self.log_test("Get vendor products (admin marketplace)", False, "Invalid products response")
+            else:
+                self.log_test("Get vendor products (admin marketplace)", False, error)
+
+    def test_category_filtering(self):
+        """Test category filtering functionality"""
+        print("\n🔍 Testing Category Filtering...")
+        
+        if not self.clinic_token or not self.vendor_id:
+            self.log_test("Category filtering", False, "Missing clinic token or vendor ID")
+            return
+            
+        # Get clinic categories
+        response, error = self.make_request('GET', '/clinic/categories', token=self.clinic_token, expected_status=200)
+        if response and response.status_code == 200:
+            categories = response.json()
+            if isinstance(categories, list):
+                self.log_test("Get clinic categories", True)
+            else:
+                self.log_test("Get clinic categories", False, "Invalid categories response")
+        else:
+            self.log_test("Get clinic categories", False, error)
+            
+        # Get all clinic products
+        response, error = self.make_request('GET', '/clinic/products', token=self.clinic_token, expected_status=200)
+        if response and response.status_code == 200:
+            products = response.json()
+            if isinstance(products, list):
+                self.log_test("Get all clinic products", True)
+            else:
+                self.log_test("Get all clinic products", False, "Invalid products response")
+        else:
+            self.log_test("Get all clinic products", False, error)
+            
+        # Test category filtering
+        category = "Media & Solutions"
+        response, error = self.make_request('GET', f'/clinic/vendors/{self.vendor_id}/products?category={category}', token=self.clinic_token, expected_status=200)
+        if response and response.status_code == 200:
+            filtered_products = response.json()
+            if isinstance(filtered_products, list):
+                self.log_test("Filter products by category", True)
+            else:
+                self.log_test("Filter products by category", False, "Invalid filtered products response")
+        else:
+            self.log_test("Filter products by category", False, error)
+
+    def test_clinic_purchases(self):
+        """Test clinic purchases functionality"""
+        print("\n🔍 Testing Clinic Purchases...")
+        
+        if not self.clinic_token:
+            self.log_test("Clinic purchases", False, "No clinic token available")
+            return
+            
+        # Get clinic purchases (should be empty initially)
+        response, error = self.make_request('GET', '/clinic/purchases', token=self.clinic_token, expected_status=200)
+        if response and response.status_code == 200:
+            purchases = response.json()
+            if isinstance(purchases, list):
+                self.log_test("Get clinic purchases", True)
+            else:
+                self.log_test("Get clinic purchases", False, "Invalid purchases response")
+        else:
+            self.log_test("Get clinic purchases", False, error)
 
     def test_marketplace_flow(self):
         """Test clinic marketplace functionality"""
