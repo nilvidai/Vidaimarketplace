@@ -321,6 +321,75 @@ async def get_clinic_assignments(clinic_id: str, admin=Depends(get_admin_user)):
         raise HTTPException(status_code=404, detail="Clinic not found")
     return {"clinic_id": clinic_id, "assigned_vendors": clinic.get("assigned_vendors", [])}
 
+@api_router.get("/admin/products")
+async def get_all_products_admin(admin=Depends(get_admin_user)):
+    """Get all products with vendor info for admin review"""
+    products = await db.products.find({}, {"_id": 0}).to_list(1000)
+    # Add vendor name to each product
+    for product in products:
+        vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "company_name": 1})
+        product["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    return products
+
+@api_router.get("/admin/products/pending")
+async def get_pending_products(admin=Depends(get_admin_user)):
+    """Get products pending approval"""
+    products = await db.products.find({"is_approved": {"$ne": True}}, {"_id": 0}).to_list(1000)
+    for product in products:
+        vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "company_name": 1})
+        product["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    return products
+
+@api_router.post("/admin/products/approve")
+async def approve_product(data: ProductApproval, admin=Depends(get_admin_user)):
+    """Approve or reject a product"""
+    product = await db.products.find_one({"id": data.product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    await db.products.update_one(
+        {"id": data.product_id},
+        {"$set": {"is_approved": data.approved}}
+    )
+    return {"message": f"Product {'approved' if data.approved else 'rejected'} successfully"}
+
+@api_router.get("/admin/marketplace/vendors")
+async def get_all_vendors_marketplace(admin=Depends(get_admin_user)):
+    """Get all vendors for admin marketplace view"""
+    vendors = await db.vendors.find({"is_active": True}, {"_id": 0, "password": 0}).to_list(1000)
+    return vendors
+
+@api_router.get("/admin/marketplace/vendors/{vendor_id}/products")
+async def get_vendor_products_admin(vendor_id: str, admin=Depends(get_admin_user)):
+    """Get all approved products for a vendor (admin view)"""
+    products = await db.products.find(
+        {"vendor_id": vendor_id, "is_active": True, "is_approved": True},
+        {"_id": 0}
+    ).to_list(1000)
+    return products
+
+@api_router.get("/admin/marketplace/categories")
+async def get_all_categories(admin=Depends(get_admin_user)):
+    """Get all unique product categories"""
+    products = await db.products.find({"is_approved": True}, {"category": 1, "_id": 0}).to_list(1000)
+    categories = list(set(p["category"] for p in products if "category" in p))
+    return categories
+
+@api_router.get("/admin/marketplace/products")
+async def get_all_approved_products(admin=Depends(get_admin_user), vendor_id: Optional[str] = None, category: Optional[str] = None):
+    """Get all approved products with optional filters"""
+    query = {"is_active": True, "is_approved": True}
+    if vendor_id:
+        query["vendor_id"] = vendor_id
+    if category:
+        query["category"] = category
+    
+    products = await db.products.find(query, {"_id": 0}).to_list(1000)
+    for product in products:
+        vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "company_name": 1})
+        product["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    return products
+
 # ==================== VENDOR ROUTES ====================
 
 @api_router.post("/vendor/login")
