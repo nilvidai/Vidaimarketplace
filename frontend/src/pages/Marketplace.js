@@ -330,19 +330,36 @@ const Marketplace = () => {
 
 const ProductCard = ({ product, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
+  const [imageError, setImageError] = useState(false);
+
+  const getCategoryGradient = (category) => {
+    const gradients = {
+      'Culture Media': 'from-purple-100 to-pink-100',
+      'Consumables': 'from-blue-100 to-green-100',
+      'Equipment': 'from-orange-100 to-yellow-100',
+      'Genetic Testing': 'from-teal-100 to-blue-100',
+      'Cryopreservation': 'from-cyan-100 to-blue-100',
+      'Lab Supplies': 'from-green-100 to-emerald-100'
+    };
+    return gradients[category] || 'from-slate-100 to-slate-200';
+  };
 
   return (
     <div className="bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-square bg-slate-100 relative">
-        {product.image_url ? (
+        {product.image_url && !imageError ? (
           <img 
             src={product.image_url} 
             alt={product.name}
             className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="w-16 h-16 text-slate-300" />
+          <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${getCategoryGradient(product.category)}`}>
+            <div className="text-center">
+              <Package className="w-16 h-16 text-slate-400 mx-auto mb-2" />
+              <span className="text-sm text-slate-500">{product.category}</span>
+            </div>
           </div>
         )}
         {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
