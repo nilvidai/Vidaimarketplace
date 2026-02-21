@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Thermometer, Brain, Truck, Star, Layers, ArrowRight, X } from 'lucide-react';
+import { Shield, Thermometer, Brain, Truck, Star, Layers, ArrowRight, X, Send, User, Mail, Building2, Phone, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
