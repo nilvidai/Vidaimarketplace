@@ -257,7 +257,7 @@ const LandingPage = () => {
               {/* CTA Buttons */}
               <div className="flex gap-4 mt-10">
                 <button
-                  onClick={() => setShowClinicLogin(true)}
+                  onClick={handleMarketplaceClick}
                   className="btn-primary px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
                   data-testid="hero-explore-btn"
                 >
@@ -265,7 +265,7 @@ const LandingPage = () => {
                   <ArrowRight className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={() => setShowVendorLogin(true)}
+                  onClick={handleVendorPortalClick}
                   className="btn-secondary px-6 py-3 rounded-lg font-semibold"
                   data-testid="hero-vendor-btn"
                 >
