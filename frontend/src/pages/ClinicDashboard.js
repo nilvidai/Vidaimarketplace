@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Home, Package, ShoppingCart, Bell, Tag, TrendingUp, ArrowRight, 
   Truck, CheckCircle, Clock, Gift, Percent, ChevronRight, RefreshCw,
-  DollarSign, BarChart3, Users, ShoppingBag, ExternalLink, X
+  DollarSign, BarChart3, Users, ShoppingBag, ExternalLink, X, ArrowLeft
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
