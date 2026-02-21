@@ -225,6 +225,24 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
       <div className="w-64 dashboard-sidebar p-6 flex flex-col">
+        <div className="mb-6 flex items-center gap-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            data-testid="back-btn"
+            title="Go Back"
+          >
+            <ArrowLeft className="w-4 h-4 text-white" />
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            data-testid="home-btn"
+            title="Home"
+          >
+            <Home className="w-4 h-4 text-white" />
+          </button>
+        </div>
         <div className="mb-10">
           <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Manrope' }}>
             VIDAI
