@@ -78,6 +78,15 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get(`${API}/admin/orders`, authHeaders);
+      setOrders(res.data);
+    } catch (err) {
+      showToast('Failed to fetch orders', 'error');
+    }
+  };
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -115,6 +124,11 @@ const AdminDashboard = () => {
     setShowApprovalModal(true);
   };
 
+  const handleViewOrder = (order) => {
+    setSelectedOrder(order);
+    setShowOrderModal(true);
+  };
+
   const approveProductWithCommission = async (productId, approved, commissionRate) => {
     try {
       await axios.post(`${API}/admin/products/approve`, { 
@@ -137,6 +151,8 @@ const AdminDashboard = () => {
       fetchInventory();
     } else if (tabId === 'reports') {
       fetchCommissionReport();
+    } else if (tabId === 'orders') {
+      fetchOrders();
     }
   };
 
@@ -144,6 +160,7 @@ const AdminDashboard = () => {
     { id: 'vendors', label: 'Vendors', icon: Building2, count: vendors.length },
     { id: 'clinics', label: 'Clinics', icon: Users, count: clinics.length },
     { id: 'products', label: 'Approvals', icon: Package, count: pendingProducts.length },
+    { id: 'orders', label: 'Orders', icon: ClipboardList },
     { id: 'inventory', label: 'Inventory', icon: Boxes },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
     { id: 'assignments', label: 'Assignments', icon: Link2 }
