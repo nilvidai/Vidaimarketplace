@@ -231,7 +231,17 @@ const ProductsTab = ({ products, categories, onAdd, onEdit, onDelete }) => (
     ) : (
       <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {products.map(product => (
-          <div key={product.id} className="product-card">
+          <div key={product.id} className="product-card relative">
+            {/* Approval Status Badge */}
+            <div className="absolute top-3 right-3 z-10">
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                product.is_approved 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-yellow-100 text-yellow-700'
+              }`}>
+                {product.is_approved ? 'Approved' : 'Pending Approval'}
+              </span>
+            </div>
             <div className="product-image flex items-center justify-center">
               {product.image_url ? (
                 <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
@@ -244,7 +254,7 @@ const ProductsTab = ({ products, categories, onAdd, onEdit, onDelete }) => (
               <h3 className="font-semibold text-slate-900 mb-1 truncate">{product.name}</h3>
               <p className="text-sm text-slate-500 mb-3 line-clamp-2">{product.description}</p>
               <div className="flex items-center justify-between">
-                <span className="price-tag text-lg">${product.price.toFixed(2)}</span>
+                <span className="price-tag text-lg">${product.price?.toFixed(2)}</span>
                 <span className="text-xs text-slate-500">Stock: {product.stock_quantity}</span>
               </div>
               <div className="flex gap-2 mt-4">
