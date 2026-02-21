@@ -986,6 +986,42 @@ async def get_vendor_products_for_clinic(vendor_id: str, user=Depends(get_clinic
     products = await db.products.find(query, {"_id": 0}).to_list(1000)
     return products
 
+@api_router.get("/clinic/all-products")
+async def get_all_products_for_clinic(user=Depends(get_clinic_user)):
+    """Get all approved products from all assigned vendors with category and vendor info"""
+    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
+    if not clinic:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    
+    assigned_ids = clinic.get("assigned_vendors", [])
+    
+    # Get all approved products from assigned vendors
+    products = await db.products.find(
+        {"vendor_id": {"$in": assigned_ids}, "is_active": True, "is_approved": True},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Get vendor names
+    vendors = await db.vendors.find(
+        {"id": {"$in": assigned_ids}, "is_active": True},
+        {"_id": 0, "id": 1, "company_name": 1}
+    ).to_list(1000)
+    vendor_map = {v["id"]: v["company_name"] for v in vendors}
+    
+    # Add vendor_name to products
+    for product in products:
+        product["vendor_name"] = vendor_map.get(product["vendor_id"], "Unknown")
+    
+    # Extract unique categories
+    categories = list(set(p["category"] for p in products if p.get("category")))
+    categories.sort()
+    
+    return {
+        "products": products,
+        "categories": categories,
+        "vendors": vendors
+    }
+
 @api_router.get("/clinic/categories")
 async def get_clinic_categories(user=Depends(get_clinic_user)):
     """Get all categories from approved products of assigned vendors"""
