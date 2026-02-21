@@ -199,10 +199,15 @@ const Marketplace = () => {
           </div>
         ) : view === 'vendors' ? (
           <VendorsList vendors={vendors} onSelect={selectVendor} />
+        ) : view === 'purchases' ? (
+          <PurchasesList purchases={purchases} onBack={goBack} />
         ) : (
           <ProductsList 
             products={products} 
             vendor={selectedVendor}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onCategoryChange={handleCategoryFilter}
             onBack={goBack}
             onAddToCart={handleAddToCart}
           />
@@ -263,21 +268,108 @@ const VendorsList = ({ vendors, onSelect }) => (
   </div>
 );
 
-const ProductsList = ({ products, vendor, onBack, onAddToCart }) => (
+const PurchasesList = ({ purchases, onBack }) => {
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-4 mb-8">
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+          data-testid="back-from-purchases"
+        >
+          <ArrowLeft className="w-5 h-5 text-slate-700" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            My Purchases
+          </h1>
+          <p className="text-slate-500 mt-1">Products you've purchased</p>
+        </div>
+      </div>
+
+      {purchases.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ShoppingBag className="w-8 h-8 text-slate-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No purchases yet</h3>
+          <p className="text-slate-500">Products from paid orders will appear here</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Vendor</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Order Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {purchases.map((purchase, idx) => (
+                <tr key={idx} className="table-row-hover">
+                  <td className="font-medium text-slate-900">{purchase.product_name}</td>
+                  <td className="text-slate-500">{purchase.vendor_name}</td>
+                  <td>{purchase.quantity}</td>
+                  <td className="price-tag">${purchase.subtotal?.toFixed(2)}</td>
+                  <td className="text-slate-500">{formatDate(purchase.order_date)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ProductsList = ({ products, vendor, categories, selectedCategory, onCategoryChange, onBack, onAddToCart }) => (
   <div>
-    <div className="flex items-center gap-4 mb-8">
-      <button
-        onClick={onBack}
-        className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
-        data-testid="back-to-vendors"
-      >
-        <ArrowLeft className="w-5 h-5 text-slate-700" />
-      </button>
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
-          {vendor?.company_name}
-        </h1>
-        <p className="text-slate-500 mt-1">Browse available products</p>
+    <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+          data-testid="back-to-vendors"
+        >
+          <ArrowLeft className="w-5 h-5 text-slate-700" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            {vendor?.company_name}
+          </h1>
+          <p className="text-slate-500 mt-1">Browse available products</p>
+        </div>
+      </div>
+      
+      {/* Category Filter */}
+      {categories && categories.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-slate-500" />
+          <select
+            value={selectedCategory || ''}
+            onChange={(e) => onCategoryChange(e.target.value)}
+            className="form-input py-2 px-3 text-sm"
+            data-testid="category-filter"
+          >
+            <option value="">All Categories</option>
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
       </div>
     </div>
 
