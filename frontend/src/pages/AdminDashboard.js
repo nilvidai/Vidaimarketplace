@@ -402,6 +402,18 @@ const AdminDashboard = () => {
         order={selectedOrder}
       />
 
+      <EnquiryDetailModal 
+        isOpen={showEnquiryModal}
+        onClose={() => {
+          setShowEnquiryModal(false);
+          setSelectedEnquiry(null);
+        }}
+        enquiry={selectedEnquiry}
+        onUpdateStatus={updateEnquiryStatus}
+        authHeaders={authHeaders}
+        showToast={showToast}
+      />
+
       {/* Toast */}
       {toast && (
         <div className={`toast ${toast.type === 'error' ? 'bg-red-600' : 'bg-slate-900'}`}>
