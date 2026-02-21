@@ -380,7 +380,7 @@ const LandingPage = () => {
   };
 
   const handleClinicLoginSuccess = (data) => {
-    navigate('/marketplace');
+    navigate('/clinic/dashboard');
   };
 
   return (
