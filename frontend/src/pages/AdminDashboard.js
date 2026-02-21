@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, Building2, Link2, LogOut, Plus, Trash2, 
-  CheckCircle, XCircle, ChevronRight 
+  CheckCircle, XCircle, ChevronRight, Package, ShoppingBag,
+  Check, X, Image as ImageIcon
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +14,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('vendors');
   const [vendors, setVendors] = useState([]);
   const [clinics, setClinics] = useState([]);
+  const [pendingProducts, setPendingProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [showClinicModal, setShowClinicModal] = useState(false);
@@ -35,12 +37,14 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [vendorsRes, clinicsRes] = await Promise.all([
+      const [vendorsRes, clinicsRes, productsRes] = await Promise.all([
         axios.get(`${API}/admin/vendors`, authHeaders),
-        axios.get(`${API}/admin/clinics`, authHeaders)
+        axios.get(`${API}/admin/clinics`, authHeaders),
+        axios.get(`${API}/admin/products/pending`, authHeaders)
       ]);
       setVendors(vendorsRes.data);
       setClinics(clinicsRes.data);
+      setPendingProducts(productsRes.data);
     } catch (err) {
       showToast('Failed to fetch data', 'error');
     } finally {
@@ -80,9 +84,20 @@ const AdminDashboard = () => {
     }
   };
 
+  const approveProduct = async (productId, approved) => {
+    try {
+      await axios.post(`${API}/admin/products/approve`, { product_id: productId, approved }, authHeaders);
+      setPendingProducts(pendingProducts.filter(p => p.id !== productId));
+      showToast(`Product ${approved ? 'approved' : 'rejected'} successfully`);
+    } catch (err) {
+      showToast('Failed to update product', 'error');
+    }
+  };
+
   const tabs = [
     { id: 'vendors', label: 'Vendors', icon: Building2, count: vendors.length },
     { id: 'clinics', label: 'Clinics', icon: Users, count: clinics.length },
+    { id: 'products', label: 'Products', icon: Package, count: pendingProducts.length },
     { id: 'assignments', label: 'Assignments', icon: Link2 }
   ];
 
