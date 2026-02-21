@@ -683,17 +683,6 @@ const ReportsTab = ({ report }) => {
     </div>
   );
 };
-                  <X className="w-4 h-4" />
-                  Reject
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
 
 const AssignmentsTab = ({ clinics, vendors, onAssign, authHeaders, showToast }) => {
   const [assignments, setAssignments] = useState({});
