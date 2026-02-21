@@ -8,6 +8,7 @@ import { CartProvider } from "./context/CartContext";
 import LandingPage from "./pages/LandingPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminMarketplace from "./pages/AdminMarketplace";
 import VendorDashboard from "./pages/VendorDashboard";
 import Marketplace from "./pages/Marketplace";
 import Cart from "./pages/Cart";
@@ -51,6 +52,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/marketplace" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminMarketplace />
           </ProtectedRoute>
         } 
       />
