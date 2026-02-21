@@ -330,6 +330,22 @@ const AdminDashboard = () => {
                 showToast={showToast}
               />
             )}
+            {activeTab === 'enquiries' && (
+              <EnquiriesTab 
+                enquiries={enquiries}
+                onView={handleViewEnquiry}
+                onUpdateStatus={updateEnquiryStatus}
+                onDelete={deleteEnquiry}
+              />
+            )}
+            {activeTab === 'settings' && (
+              <SettingsTab 
+                settings={adminSettings}
+                authHeaders={authHeaders}
+                showToast={showToast}
+                onUpdate={setAdminSettings}
+              />
+            )}
           </>
         )}
       </div>
