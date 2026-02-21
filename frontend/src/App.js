@@ -77,6 +77,14 @@ function AppRoutes() {
 
       {/* Clinic/Marketplace Routes */}
       <Route 
+        path="/clinic/dashboard" 
+        element={
+          <ProtectedRoute allowedRoles={['clinic']}>
+            <ClinicDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/marketplace" 
         element={
           <ProtectedRoute allowedRoles={['clinic']}>
