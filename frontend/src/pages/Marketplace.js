@@ -370,8 +370,6 @@ const ProductsList = ({ products, vendor, categories, selectedCategory, onCatego
         </div>
       )}
     </div>
-      </div>
-    </div>
 
     {products.length === 0 ? (
       <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
