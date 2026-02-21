@@ -430,6 +430,7 @@ async def create_product(data: ProductCreate, user=Depends(get_vendor_user)):
         "stock_quantity": data.stock_quantity,
         "image_url": data.image_url,
         "is_active": True,
+        "is_approved": False,  # Requires admin approval
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.products.insert_one(product_doc)
