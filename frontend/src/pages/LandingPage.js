@@ -427,11 +427,11 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-[700px]" data-testid="hero-section">
-        {/* Lab Background Image - Female scientist with microscope */}
+        {/* Lab Background Image - Two scientists with microscope in IVF lab */}
         <div className="absolute inset-0">
           <img
-            src="https://images.pexels.com/photos/4031415/pexels-photo-4031415.jpeg?auto=compress&cs=tinysrgb&w=1920"
-            alt="Female scientist using microscope in IVF laboratory"
+            src="https://images.pexels.com/photos/9243720/pexels-photo-9243720.jpeg?auto=compress&cs=tinysrgb&w=1920"
+            alt="Two scientists examining samples in IVF laboratory"
             className="w-full h-full object-cover object-center"
           />
           {/* Gradient Overlay for text readability */}
