@@ -56,6 +56,24 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchInventory = async () => {
+    try {
+      const res = await axios.get(`${API}/admin/inventory`, authHeaders);
+      setInventory(res.data);
+    } catch (err) {
+      showToast('Failed to fetch inventory', 'error');
+    }
+  };
+
+  const fetchCommissionReport = async () => {
+    try {
+      const res = await axios.get(`${API}/admin/reports/commissions`, authHeaders);
+      setCommissionReport(res.data);
+    } catch (err) {
+      showToast('Failed to fetch report', 'error');
+    }
+  };
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -88,20 +106,42 @@ const AdminDashboard = () => {
     }
   };
 
-  const approveProduct = async (productId, approved) => {
+  const handleApproveClick = (product) => {
+    setSelectedProduct(product);
+    setShowApprovalModal(true);
+  };
+
+  const approveProductWithCommission = async (productId, approved, commissionRate) => {
     try {
-      await axios.post(`${API}/admin/products/approve`, { product_id: productId, approved }, authHeaders);
+      await axios.post(`${API}/admin/products/approve`, { 
+        product_id: productId, 
+        approved,
+        commission_rate: commissionRate 
+      }, authHeaders);
       setPendingProducts(pendingProducts.filter(p => p.id !== productId));
       showToast(`Product ${approved ? 'approved' : 'rejected'} successfully`);
+      setShowApprovalModal(false);
+      setSelectedProduct(null);
     } catch (err) {
       showToast('Failed to update product', 'error');
+    }
+  };
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'inventory') {
+      fetchInventory();
+    } else if (tabId === 'reports') {
+      fetchCommissionReport();
     }
   };
 
   const tabs = [
     { id: 'vendors', label: 'Vendors', icon: Building2, count: vendors.length },
     { id: 'clinics', label: 'Clinics', icon: Users, count: clinics.length },
-    { id: 'products', label: 'Products', icon: Package, count: pendingProducts.length },
+    { id: 'products', label: 'Approvals', icon: Package, count: pendingProducts.length },
+    { id: 'inventory', label: 'Inventory', icon: Boxes },
+    { id: 'reports', label: 'Reports', icon: BarChart3 },
     { id: 'assignments', label: 'Assignments', icon: Link2 }
   ];
 
