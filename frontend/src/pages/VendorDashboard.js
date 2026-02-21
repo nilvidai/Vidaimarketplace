@@ -178,6 +178,11 @@ const VendorDashboard = () => {
               <OrdersTab 
                 orders={orders}
                 onUpdateStatus={updateOrderStatus}
+                onUpdateShipping={(updatedOrder) => {
+                  setOrders(orders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+                  showToast('Shipping details updated');
+                }}
+                authHeaders={authHeaders}
               />
             )}
             {activeTab === 'inventory' && (
