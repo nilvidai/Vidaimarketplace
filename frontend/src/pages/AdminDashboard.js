@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Users, Building2, Link2, LogOut, Plus, Trash2, 
   CheckCircle, XCircle, ChevronRight, Package, ShoppingBag,
-  Check, X, Image as ImageIcon, BarChart3, Boxes, DollarSign
+  Check, X, Image as ImageIcon, BarChart3, Boxes, DollarSign,
+  ClipboardList, Truck, Eye
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -17,11 +18,14 @@ const AdminDashboard = () => {
   const [pendingProducts, setPendingProducts] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [commissionReport, setCommissionReport] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [showClinicModal, setShowClinicModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toast, setToast] = useState(null);
