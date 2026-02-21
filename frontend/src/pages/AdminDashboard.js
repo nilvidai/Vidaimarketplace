@@ -1704,4 +1704,395 @@ const OrderDetailModal = ({ isOpen, onClose, order }) => {
   );
 };
 
+const EnquiriesTab = ({ enquiries, onView, onUpdateStatus, onDelete }) => {
+  const [filterStatus, setFilterStatus] = useState('');
+  
+  const filteredEnquiries = filterStatus 
+    ? enquiries.filter(e => e.status === filterStatus)
+    : enquiries;
+
+  const getStatusClass = (status) => {
+    const classes = {
+      new: 'bg-blue-100 text-blue-700',
+      contacted: 'bg-yellow-100 text-yellow-700',
+      converted: 'bg-green-100 text-green-700',
+      closed: 'bg-slate-100 text-slate-700'
+    };
+    return classes[status] || 'bg-slate-100 text-slate-700';
+  };
+
+  const getTypeLabel = (type) => {
+    const labels = {
+      general: 'General',
+      demo: 'Demo Request',
+      pricing: 'Pricing',
+      partnership: 'Partnership'
+    };
+    return labels[type] || type;
+  };
+
+  const newCount = enquiries.filter(e => e.status === 'new').length;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            Contact Enquiries
+          </h1>
+          <p className="text-slate-500 mt-1">Manage sales enquiries and leads</p>
+        </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="form-input py-2 px-3"
+          data-testid="enquiries-status-filter"
+        >
+          <option value="">All Statuses</option>
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="converted">Converted</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Enquiries</div>
+          <div className="text-3xl font-bold text-slate-900">{enquiries.length}</div>
+        </div>
+        <div className="bg-blue-50 rounded-xl border border-blue-200 p-6">
+          <div className="text-sm text-blue-600 mb-1">New</div>
+          <div className="text-3xl font-bold text-blue-700">{newCount}</div>
+        </div>
+        <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-6">
+          <div className="text-sm text-yellow-600 mb-1">Contacted</div>
+          <div className="text-3xl font-bold text-yellow-700">
+            {enquiries.filter(e => e.status === 'contacted').length}
+          </div>
+        </div>
+        <div className="bg-green-50 rounded-xl border border-green-200 p-6">
+          <div className="text-sm text-green-600 mb-1">Converted</div>
+          <div className="text-3xl font-bold text-green-700">
+            {enquiries.filter(e => e.status === 'converted').length}
+          </div>
+        </div>
+      </div>
+
+      {/* Enquiries Table */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Company</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredEnquiries.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="text-center py-12 text-slate-500">
+                  No enquiries found
+                </td>
+              </tr>
+            ) : (
+              filteredEnquiries.map(enquiry => (
+                <tr key={enquiry.id} className="table-row-hover">
+                  <td className="text-slate-500">
+                    {new Date(enquiry.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="font-medium text-slate-900">{enquiry.name}</td>
+                  <td>{enquiry.email}</td>
+                  <td>{enquiry.company || '-'}</td>
+                  <td>
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                      {getTypeLabel(enquiry.enquiry_type)}
+                    </span>
+                  </td>
+                  <td>
+                    <select
+                      value={enquiry.status}
+                      onChange={(e) => onUpdateStatus(enquiry.id, e.target.value)}
+                      className={`text-xs font-medium rounded-full px-2 py-1 border-0 cursor-pointer ${getStatusClass(enquiry.status)}`}
+                      data-testid={`enquiry-status-${enquiry.id}`}
+                    >
+                      <option value="new">New</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="converted">Converted</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => onView(enquiry)}
+                        className="p-2 text-[#E07A5F] hover:bg-orange-50 rounded-lg transition-colors"
+                        data-testid={`view-enquiry-${enquiry.id}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(enquiry.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        data-testid={`delete-enquiry-${enquiry.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
+  const [formData, setFormData] = useState({
+    contact_email: settings?.contact_email || '',
+    company_name: settings?.company_name || 'VIDAI',
+    notify_on_enquiry: settings?.notify_on_enquiry ?? true
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        contact_email: settings.contact_email || '',
+        company_name: settings.company_name || 'VIDAI',
+        notify_on_enquiry: settings.notify_on_enquiry ?? true
+      });
+    }
+  }, [settings]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API}/admin/settings`, formData, authHeaders);
+      onUpdate(formData);
+      showToast('Settings saved successfully');
+    } catch (err) {
+      showToast('Failed to save settings', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+          Settings
+        </h1>
+        <p className="text-slate-500 mt-1">Configure admin settings and notifications</p>
+      </div>
+
+      <div className="max-w-2xl">
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <h2 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Mail className="w-5 h-5 text-slate-500" />
+            Contact & Notifications
+          </h2>
+
+          <div className="space-y-6">
+            <div className="form-group">
+              <label className="form-label">Company Name</label>
+              <input
+                type="text"
+                value={formData.company_name}
+                onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                className="form-input"
+                placeholder="VIDAI"
+                data-testid="settings-company-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Contact Email</label>
+              <input
+                type="email"
+                value={formData.contact_email}
+                onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                className="form-input"
+                placeholder="sales@vidai.com"
+                data-testid="settings-email-input"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Enquiry notifications will be sent to this email
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="notify_on_enquiry"
+                checked={formData.notify_on_enquiry}
+                onChange={(e) => setFormData({...formData, notify_on_enquiry: e.target.checked})}
+                className="w-5 h-5 rounded border-slate-300 text-[#E07A5F] focus:ring-[#E07A5F]"
+                data-testid="settings-notify-checkbox"
+              />
+              <label htmlFor="notify_on_enquiry" className="text-slate-700">
+                Send email notification on new enquiries
+              </label>
+            </div>
+
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-primary px-6 py-2.5 rounded-lg font-medium"
+              data-testid="settings-save-btn"
+            >
+              {saving ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EnquiryDetailModal = ({ isOpen, onClose, enquiry, onUpdateStatus, authHeaders, showToast }) => {
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (enquiry) {
+      setNotes(enquiry.notes || '');
+    }
+  }, [enquiry]);
+
+  if (!isOpen || !enquiry) return null;
+
+  const saveNotes = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API}/admin/enquiries/${enquiry.id}/notes?notes=${encodeURIComponent(notes)}`, {}, authHeaders);
+      showToast('Notes saved');
+    } catch (err) {
+      showToast('Failed to save notes', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getTypeLabel = (type) => {
+    const labels = {
+      general: 'General Inquiry',
+      demo: 'Demo Request',
+      pricing: 'Pricing Information',
+      partnership: 'Partnership Opportunity'
+    };
+    return labels[type] || type;
+  };
+
+  return (
+    <div className="modal-backdrop modal-overlay" onClick={onClose}>
+      <div className="modal-box modal-content max-w-2xl" onClick={e => e.stopPropagation()}>
+        <div className="modal-header flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Enquiry Details</h2>
+            <p className="text-slate-500 text-sm">{getTypeLabel(enquiry.enquiry_type)}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+        
+        <div className="modal-body space-y-6">
+          {/* Contact Info */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-slate-50 rounded-xl p-4">
+              <div className="text-sm text-slate-500 mb-1">Name</div>
+              <div className="font-semibold text-slate-900">{enquiry.name}</div>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-4">
+              <div className="text-sm text-slate-500 mb-1">Email</div>
+              <div className="font-semibold text-slate-900">{enquiry.email}</div>
+            </div>
+            {enquiry.company && (
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="text-sm text-slate-500 mb-1">Company</div>
+                <div className="font-semibold text-slate-900">{enquiry.company}</div>
+              </div>
+            )}
+            {enquiry.phone && (
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="text-sm text-slate-500 mb-1">Phone</div>
+                <div className="font-semibold text-slate-900">{enquiry.phone}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Message */}
+          <div>
+            <div className="text-sm font-medium text-slate-700 mb-2">Message</div>
+            <div className="bg-slate-50 rounded-xl p-4 text-slate-700 whitespace-pre-wrap">
+              {enquiry.message}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div>
+            <div className="text-sm font-medium text-slate-700 mb-2">Status</div>
+            <select
+              value={enquiry.status}
+              onChange={(e) => onUpdateStatus(enquiry.id, e.target.value)}
+              className="form-input w-full"
+              data-testid="enquiry-detail-status"
+            >
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="converted">Converted</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <div className="text-sm font-medium text-slate-700 mb-2">Internal Notes</div>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="form-input min-h-[100px]"
+              placeholder="Add notes about this enquiry..."
+              data-testid="enquiry-notes-input"
+            />
+            <button
+              onClick={saveNotes}
+              disabled={saving}
+              className="mt-2 btn-secondary px-4 py-2 rounded-lg text-sm"
+            >
+              {saving ? 'Saving...' : 'Save Notes'}
+            </button>
+          </div>
+
+          {/* Timestamps */}
+          <div className="flex justify-between text-sm text-slate-500">
+            <div>Created: {new Date(enquiry.created_at).toLocaleString()}</div>
+            {enquiry.updated_at && (
+              <div>Updated: {new Date(enquiry.updated_at).toLocaleString()}</div>
+            )}
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full btn-secondary py-2.5 rounded-lg font-medium"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default AdminDashboard;
