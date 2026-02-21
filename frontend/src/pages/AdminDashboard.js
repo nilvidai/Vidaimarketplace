@@ -92,6 +92,24 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchEnquiries = async () => {
+    try {
+      const res = await axios.get(`${API}/admin/enquiries`, authHeaders);
+      setEnquiries(res.data);
+    } catch (err) {
+      showToast('Failed to fetch enquiries', 'error');
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const res = await axios.get(`${API}/admin/settings`, authHeaders);
+      setAdminSettings(res.data);
+    } catch (err) {
+      console.error('Failed to fetch settings');
+    }
+  };
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -127,6 +145,32 @@ const AdminDashboard = () => {
   const handleApproveClick = (product) => {
     setSelectedProduct(product);
     setShowApprovalModal(true);
+  };
+
+  const handleViewEnquiry = (enquiry) => {
+    setSelectedEnquiry(enquiry);
+    setShowEnquiryModal(true);
+  };
+
+  const updateEnquiryStatus = async (enquiryId, status) => {
+    try {
+      await axios.put(`${API}/admin/enquiries/${enquiryId}/status?status=${status}`, {}, authHeaders);
+      setEnquiries(enquiries.map(e => e.id === enquiryId ? {...e, status} : e));
+      showToast('Enquiry status updated');
+    } catch (err) {
+      showToast('Failed to update status', 'error');
+    }
+  };
+
+  const deleteEnquiry = async (id) => {
+    if (!window.confirm('Delete this enquiry?')) return;
+    try {
+      await axios.delete(`${API}/admin/enquiries/${id}`, authHeaders);
+      setEnquiries(enquiries.filter(e => e.id !== id));
+      showToast('Enquiry deleted');
+    } catch (err) {
+      showToast('Failed to delete enquiry', 'error');
+    }
   };
 
   const handleViewOrder = (order) => {
