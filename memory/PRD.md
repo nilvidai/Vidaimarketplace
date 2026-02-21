@@ -87,6 +87,23 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - Updated CTA buttons with shadows and hover effects
 - Fixed missing Search and ShoppingCart icon imports
 
+### Iteration 7 (Feb 21, 2026) - Clinic Dashboard
+**New Feature - Clinic Dashboard:**
+- Comprehensive dashboard for clinics at `/clinic/dashboard`
+- **Overview Tab:** Order summary cards (total orders, pending, shipped, total spent), recent orders list, quick actions
+- **Notifications Tab:** Order status updates, new product alerts, system notifications
+- **Offers Tab:** Active promotional offers with coupon codes (bulk discounts, free shipping, vendor specials)
+- **Pricing Trends Tab:** Vendor price comparison table, category-wise price breakdown with min/avg/max prices
+
+**Backend Endpoints Added:**
+- `GET /api/clinic/dashboard/summary` - Dashboard summary stats
+- `GET /api/clinic/dashboard/notifications` - Order updates and new product alerts
+- `GET /api/clinic/dashboard/offers` - Active promotional offers
+- `GET /api/clinic/dashboard/pricing-trends` - Vendor and category pricing comparison
+
+**UI Flow Update:**
+- Clinics now redirected to dashboard after login instead of directly to marketplace
+
 ## Tech Stack
 - Frontend: React + Tailwind CSS
 - Backend: FastAPI + MongoDB
