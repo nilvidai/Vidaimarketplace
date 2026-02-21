@@ -1350,4 +1350,275 @@ const ApprovalModal = ({ isOpen, onClose, product, onApprove }) => {
   );
 };
 
+const AdminOrdersTab = ({ orders, onViewOrder }) => {
+  const [filterStatus, setFilterStatus] = useState('');
+  
+  const filteredOrders = filterStatus 
+    ? orders.filter(order => order.status === filterStatus)
+    : orders;
+
+  const getStatusClass = (status) => {
+    const classes = {
+      pending: 'status-pending',
+      confirmed: 'status-confirmed',
+      processing: 'status-processing',
+      shipped: 'status-shipped',
+      delivered: 'status-delivered',
+      cancelled: 'status-cancelled'
+    };
+    return classes[status] || 'status-pending';
+  };
+
+  const totalOrders = filteredOrders.length;
+  const paidOrders = filteredOrders.filter(o => o.payment_status === 'paid').length;
+  const totalRevenue = filteredOrders.filter(o => o.payment_status === 'paid').reduce((sum, o) => sum + o.total_amount, 0);
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            Order Management
+          </h1>
+          <p className="text-slate-500 mt-1">Track all clinic orders</p>
+        </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="form-input py-2 px-3"
+          data-testid="orders-status-filter"
+        >
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="processing">Processing</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Orders</div>
+          <div className="text-3xl font-bold text-slate-900">{totalOrders}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Paid Orders</div>
+          <div className="text-3xl font-bold text-green-600">{paidOrders}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Revenue</div>
+          <div className="text-3xl font-bold text-[#E07A5F]">${totalRevenue.toFixed(2)}</div>
+        </div>
+      </div>
+
+      {/* Orders Table */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Clinic</th>
+              <th>Vendor</th>
+              <th>Amount</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Tracking</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredOrders.length === 0 ? (
+              <tr>
+                <td colSpan="8" className="text-center py-12 text-slate-500">
+                  No orders found
+                </td>
+              </tr>
+            ) : (
+              filteredOrders.map(order => (
+                <tr key={order.id} className="table-row-hover">
+                  <td className="font-medium text-slate-900">#{order.id.slice(0, 8)}</td>
+                  <td>{order.clinic_name}</td>
+                  <td>{order.vendor_name}</td>
+                  <td className="price-tag">${order.total_amount?.toFixed(2)}</td>
+                  <td>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      order.payment_status === 'paid' ? 'badge-success' : 'badge-warning'
+                    }`}>
+                      {order.payment_status?.charAt(0).toUpperCase() + order.payment_status?.slice(1)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(order.status)}`}>
+                      {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
+                    </span>
+                  </td>
+                  <td>
+                    {order.tracking_number ? (
+                      <div className="text-sm">
+                        <div className="font-medium">{order.carrier || 'Unknown'}</div>
+                        <div className="text-slate-500">{order.tracking_number}</div>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => onViewOrder(order)}
+                      className="p-2 text-[#E07A5F] hover:bg-orange-50 rounded-lg transition-colors"
+                      data-testid={`view-order-${order.id}`}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const OrderDetailModal = ({ isOpen, onClose, order }) => {
+  if (!isOpen || !order) return null;
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleString();
+  };
+
+  return (
+    <div className="modal-backdrop modal-overlay" onClick={onClose}>
+      <div className="modal-box modal-content max-w-2xl" onClick={e => e.stopPropagation()}>
+        <div className="modal-header flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Order Details</h2>
+            <p className="text-slate-500 text-sm">#{order.id.slice(0, 8)}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+        
+        <div className="modal-body space-y-6">
+          {/* Status Row */}
+          <div className="flex gap-4">
+            <div className="flex-1 bg-slate-50 rounded-xl p-4">
+              <div className="text-sm text-slate-500 mb-1">Order Status</div>
+              <div className="font-semibold text-slate-900 capitalize">{order.status}</div>
+            </div>
+            <div className="flex-1 bg-slate-50 rounded-xl p-4">
+              <div className="text-sm text-slate-500 mb-1">Payment Status</div>
+              <div className={`font-semibold ${order.payment_status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
+                {order.payment_status?.charAt(0).toUpperCase() + order.payment_status?.slice(1)}
+              </div>
+            </div>
+            <div className="flex-1 bg-slate-50 rounded-xl p-4">
+              <div className="text-sm text-slate-500 mb-1">Total Amount</div>
+              <div className="font-semibold text-[#E07A5F]">${order.total_amount?.toFixed(2)}</div>
+            </div>
+          </div>
+
+          {/* Parties */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm font-medium text-slate-700 mb-2">Clinic</div>
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="font-semibold text-slate-900">{order.clinic_name}</div>
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-700 mb-2">Vendor</div>
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="font-semibold text-slate-900">{order.vendor_name}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Items */}
+          <div>
+            <div className="text-sm font-medium text-slate-700 mb-2">Order Items</div>
+            <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+              {order.items?.map((item, idx) => (
+                <div key={idx} className="flex justify-between">
+                  <span className="text-slate-600">{item.name} x {item.quantity}</span>
+                  <span className="font-medium text-slate-900">${item.subtotal?.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Shipping */}
+          <div>
+            <div className="text-sm font-medium text-slate-700 mb-2">Shipping Address</div>
+            <div className="bg-slate-50 rounded-xl p-4">
+              <div className="text-slate-900">
+                {order.shipping_address}<br />
+                {order.city}, {order.state} {order.zip_code}<br />
+                {order.country}
+              </div>
+            </div>
+          </div>
+
+          {/* Tracking Info */}
+          {order.tracking_number && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 text-green-800 font-medium mb-2">
+                <Truck className="w-4 h-4" />
+                Tracking Information
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <div className="text-green-600">Carrier</div>
+                  <div className="font-medium text-green-900">{order.carrier || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-green-600">Tracking #</div>
+                  <div className="font-medium text-green-900">{order.tracking_number}</div>
+                </div>
+                <div>
+                  <div className="text-green-600">Est. Delivery</div>
+                  <div className="font-medium text-green-900">{order.estimated_delivery || '-'}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Timestamps */}
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <div className="text-slate-500">Created</div>
+              <div className="font-medium">{formatDate(order.created_at)}</div>
+            </div>
+            {order.shipped_at && (
+              <div>
+                <div className="text-slate-500">Shipped</div>
+                <div className="font-medium">{formatDate(order.shipped_at)}</div>
+              </div>
+            )}
+            {order.delivered_at && (
+              <div>
+                <div className="text-slate-500">Delivered</div>
+                <div className="font-medium">{formatDate(order.delivered_at)}</div>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full btn-secondary py-2.5 rounded-lg font-medium"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default AdminDashboard;
