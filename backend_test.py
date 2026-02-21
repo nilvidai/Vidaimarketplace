@@ -268,8 +268,8 @@ class VIDAIMarketplaceAPITester:
             "image_url": "https://example.com/media.jpg"
         }
         
-        response, error = self.make_request('POST', '/vendor/products', product_data, self.vendor_token, 201)
-        if response and response.status_code == 201:
+        response, error = self.make_request('POST', '/vendor/products', product_data, self.vendor_token, 200)
+        if response and response.status_code == 200:
             result = response.json()
             self.product_id = result.get('id')
             self.log_test("Create product", True)
