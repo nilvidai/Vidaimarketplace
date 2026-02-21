@@ -1207,4 +1207,111 @@ const AssignModal = ({ isOpen, onClose, clinic, vendors, onSuccess, authHeaders 
   );
 };
 
+const ApprovalModal = ({ isOpen, onClose, product, onApprove }) => {
+  const [commissionRate, setCommissionRate] = useState(10);
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen || !product) return null;
+
+  const price = product.price || 0;
+  const commissionAmount = (price * commissionRate / 100).toFixed(2);
+  const vendorAmount = (price - commissionAmount).toFixed(2);
+
+  const handleApprove = async () => {
+    setLoading(true);
+    await onApprove(product.id, true, commissionRate);
+    setLoading(false);
+  };
+
+  const handleReject = async () => {
+    setLoading(true);
+    await onApprove(product.id, false, 0);
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-backdrop modal-overlay" onClick={onClose}>
+      <div className="modal-box modal-content max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="text-xl font-bold text-slate-900">Product Approval</h2>
+          <p className="text-slate-500 text-sm mt-1">Set commission before approving</p>
+        </div>
+        
+        <div className="modal-body">
+          {/* Product Info */}
+          <div className="bg-slate-50 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center">
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-slate-300" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">{product.name}</h3>
+                <p className="text-sm text-slate-500">{product.vendor_name}</p>
+                <p className="text-lg font-bold text-[#E07A5F] mt-1">${price.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Commission Setting */}
+          <div className="form-group">
+            <label className="form-label">VIDAI Commission Rate (%)</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={commissionRate}
+              onChange={(e) => setCommissionRate(parseFloat(e.target.value) || 0)}
+              className="form-input"
+              data-testid="commission-rate-input"
+            />
+          </div>
+
+          {/* Commission Breakdown */}
+          <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+            <div className="flex justify-between">
+              <span className="text-slate-600">Product Price</span>
+              <span className="font-medium">${price.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">VIDAI Commission ({commissionRate}%)</span>
+              <span className="font-medium text-[#E07A5F]">${commissionAmount}</span>
+            </div>
+            <hr className="border-slate-200" />
+            <div className="flex justify-between">
+              <span className="font-semibold text-slate-900">Vendor Receives</span>
+              <span className="font-bold text-green-600">${vendorAmount}</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={handleReject}
+              disabled={loading}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors"
+              data-testid="reject-btn"
+            >
+              <X className="w-4 h-4" />
+              Reject
+            </button>
+            <button
+              onClick={handleApprove}
+              disabled={loading}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors"
+              data-testid="approve-btn"
+            >
+              <Check className="w-4 h-4" />
+              Approve
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default AdminDashboard;
