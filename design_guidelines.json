@@ -1,0 +1,142 @@
+{
+  "identity": {
+    "name": "VIDAI",
+    "description": "AI-Powered IVF Healthcare Marketplace",
+    "tone": "Professional, Compassionate, High-Tech, Trustworthy",
+    "theme_mode": "light",
+    "archetype": "The Scientific Caregiver"
+  },
+  "typography": {
+    "font_family_heading": "Manrope, sans-serif",
+    "font_family_body": "Inter, sans-serif",
+    "scale": {
+      "h1": "text-4xl md:text-6xl font-bold tracking-tight",
+      "h2": "text-3xl md:text-4xl font-semibold tracking-tight",
+      "h3": "text-2xl font-semibold",
+      "body_lg": "text-lg leading-relaxed text-slate-600",
+      "body": "text-base leading-relaxed text-slate-600",
+      "caption": "text-sm text-slate-500"
+    },
+    "instructions": "Use Manrope for all headings (h1-h3) to give a modern, humanist medical feel. Use Inter for body text for maximum legibility at small sizes."
+  },
+  "colors": {
+    "primary": {
+      "name": "Life Coral",
+      "hex": "#E07A5F",
+      "tailwind": "bg-[#E07A5F] text-white hover:bg-[#D0694E]",
+      "usage": "Primary CTAs, Key Highlights, 'New Life' metaphors"
+    },
+    "secondary": {
+      "name": "Trust Navy",
+      "hex": "#1E293B",
+      "tailwind": "bg-slate-800 text-white",
+      "usage": "Sidebars, Footers, Strong Headings, Secondary Buttons"
+    },
+    "accent": {
+      "name": "Bio Teal",
+      "hex": "#2A9D8F",
+      "tailwind": "text-[#2A9D8F] bg-[#2A9D8F]/10",
+      "usage": "Success states, Medical icons, Growth indicators"
+    },
+    "background": {
+      "page": "bg-slate-50",
+      "card": "bg-white",
+      "surface": "bg-white/80 backdrop-blur-md"
+    },
+    "text": {
+      "main": "text-slate-900",
+      "muted": "text-slate-500",
+      "inverted": "text-white"
+    },
+    "border": "border-slate-200"
+  },
+  "layout_strategy": {
+    "global": {
+      "spacing": "Relaxed. Use p-8 or p-12 for section padding. Avoid cramping.",
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "radius": "rounded-xl"
+    },
+    "landing_page": {
+      "hero": "Split layout. Left: Typography. Right: Emotional/Scientific Image. Use 'blob' shapes in background for organic feel.",
+      "features": "Bento Grid style. Asymmetrical cards. Mix of text-only and image-heavy cards.",
+      "stats": "Simple 3-column row. Large numbers (text-5xl) in Navy, labels in Coral."
+    },
+    "dashboard": {
+      "structure": "Sidebar Layout (Left fixed). Top Header (Sticky, Glass). Main Content (Scrollable, bg-slate-50).",
+      "cards": "White background, shadow-sm, border-slate-100. Padding p-6."
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#E07A5F] hover:bg-[#D0694E] text-white rounded-lg px-6 py-3 font-semibold transition-all shadow-lg shadow-orange-500/20",
+      "secondary": "border-2 border-slate-200 hover:border-slate-800 text-slate-700 hover:text-slate-900 bg-transparent rounded-lg px-6 py-3 font-medium transition-all",
+      "ghost": "text-slate-600 hover:text-[#E07A5F] hover:bg-orange-50 rounded-lg px-4 py-2"
+    },
+    "cards": {
+      "base": "bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300",
+      "feature": "bg-slate-50 hover:bg-white transition-colors border border-transparent hover:border-slate-200 p-8 rounded-2xl"
+    },
+    "inputs": {
+      "style": "bg-white border-slate-200 focus:border-[#E07A5F] focus:ring-[#E07A5F] rounded-lg"
+    },
+    "modals": {
+      "overlay": "bg-slate-900/40 backdrop-blur-sm",
+      "content": "bg-white rounded-2xl shadow-2xl border border-slate-100 p-0 overflow-hidden"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": "Soft, diffuse shadows. shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]",
+    "gradients": "Subtle background gradients only. 'bg-gradient-to-br from-slate-50 to-orange-50/30'",
+    "glassmorphism": "Use for sticky headers and toast notifications only. bg-white/80 backdrop-blur-md border-b border-white/20",
+    "icons": "Use Lucide React. Stroke width 1.5px (thin/elegant)."
+  },
+  "images": {
+    "hero_main": {
+      "url": "https://images.pexels.com/photos/8326315/pexels-photo-8326315.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Scientist in modern IVF laboratory",
+      "usage": "Landing Page Hero Right Side"
+    },
+    "hero_emotional": {
+      "url": "https://images.pexels.com/photos/3845407/pexels-photo-3845407.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Mother holding baby with care",
+      "usage": "Alternative Hero or 'Success Stories' section"
+    },
+    "product_incubator": {
+      "url": "https://images.pexels.com/photos/9344644/pexels-photo-9344644.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Advanced IVF Incubator",
+      "usage": "Marketplace Product Card"
+    },
+    "product_microscope": {
+      "url": "https://images.pexels.com/photos/5726797/pexels-photo-5726797.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "High-precision Microscope",
+      "usage": "Marketplace Product Card"
+    }
+  },
+  "instructions_to_main_agent": {
+    "general": "You are building a high-trust medical marketplace. Accuracy and cleanliness are key. Do not clutter the UI.",
+    "on_forms": "Use Shadcn Form components. Ensure validation messages are clear and red/orange. Split long forms (like Clinic Registration) into Steps (Stepper UI).",
+    "on_marketplace": "The product grid should be clean. 4 columns on desktop. Product cards must show: Image, Title, Price (highlighted), and 'Add to Cart' button.",
+    "on_admin": "The Admin dashboard should be data-dense but readable. Use Tables for Vendor/Clinic lists. Use Badges for status (Active/Pending).",
+    "critical_donts": [
+      "DO NOT use 'bg-transparent' for dropdowns or modal backgrounds. It breaks readability.",
+      "DO NOT use generic 'Lorem Ipsum' for medical data. Use realistic terms like 'Cryopreservation', 'Pipettes', 'Incubators'.",
+      "DO NOT make the primary Coral color too neon. Stick to the earthy #E07A5F."
+    ]
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add .App { text-align: center; } in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors: separates good from extraordinary.",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use 'sonner' for toasts located in /app/frontend/src/components/ui/sonner.jsx"
+  ]
+}
