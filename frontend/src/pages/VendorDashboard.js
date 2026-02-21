@@ -180,6 +180,9 @@ const VendorDashboard = () => {
                 onUpdateStatus={updateOrderStatus}
               />
             )}
+            {activeTab === 'inventory' && (
+              <VendorInventoryTab inventory={inventory} />
+            )}
           </>
         )}
       </div>
