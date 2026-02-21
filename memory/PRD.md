@@ -4,18 +4,19 @@
 AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors for medical consumables, equipment, and genetic testing kits.
 
 ## User Personas
-1. **Admin** - Platform administrator managing vendors, clinics, assignments, product approvals, inventory, and order tracking
+1. **Admin** - Platform administrator managing vendors, clinics, assignments, product approvals, inventory, orders, enquiries, and settings
 2. **Vendor** - Medical supply companies listing products, managing inventory, and fulfilling orders with shipping details
 3. **Clinic** - IVF clinics purchasing products from assigned vendors and tracking order deliveries
 
 ## Core Requirements (Static)
-- Landing page with hero, stats, features, login modals
+- Landing page with hero, stats, features, login modals, contact sales
 - Admin panel for user management
 - Vendor-to-clinic assignment system
 - Product catalog with approval workflow
 - Shopping cart and checkout with Stripe
 - Order management with tracking
 - Inventory and commission management
+- Contact enquiry management
 
 ## What's Been Implemented
 
@@ -62,6 +63,19 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - Clinic Track Orders: Progress tracker, tracking info, order details
 - Status timestamps: shipped_at, delivered_at automatically recorded
 
+### Iteration 5 (Feb 21, 2026) - Contact Sales & Bug Fixes
+**Bug Fixes:**
+- Fixed "Vendor Gets" column showing $0.00 in Admin Inventory (now calculates dynamically)
+- Fixed Checkout page blank when returning from cancelled Stripe payment
+
+**New Features - Contact Sales:**
+- Contact Sales modal on landing page with form (name, email, company, phone, message, enquiry type)
+- Admin Enquiries tab: View all contact enquiries with status management
+- Enquiry statuses: New → Contacted → Converted → Closed
+- Enquiry detail modal with notes functionality
+- Admin Settings tab: Configure contact email and notification preferences
+- Summary cards showing enquiry statistics
+
 ## Tech Stack
 - Frontend: React + Tailwind CSS
 - Backend: FastAPI + MongoDB
@@ -74,7 +88,7 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - None remaining
 
 ### P1 (High)
-- Email notifications for orders
+- Email notifications (integrate email service for enquiry notifications)
 - Inventory auto-deduction on purchase
 - Vendor analytics dashboard
 
@@ -100,6 +114,11 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - GET /api/admin/inventory
 - GET /api/admin/reports/commissions
 - GET /api/admin/orders
+- GET/PUT/DELETE /api/admin/enquiries
+- GET/PUT /api/admin/settings
+
+### Contact (Public)
+- POST /api/contact
 
 ### Vendor
 - POST /api/vendor/login
