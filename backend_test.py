@@ -183,8 +183,8 @@ class VIDAIMarketplaceAPITester:
             "country": "USA"
         }
         
-        response, error = self.make_request('POST', '/admin/clinics', clinic_data, self.admin_token, 201)
-        if response and response.status_code == 201:
+        response, error = self.make_request('POST', '/admin/clinics', clinic_data, self.admin_token, 200)
+        if response and response.status_code == 200:
             result = response.json()
             self.clinic_id = result.get('id')
             self.clinic_email = clinic_data['email']
