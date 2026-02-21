@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ShoppingCart, LogOut, Building2, ArrowLeft, Plus, Minus, 
   Trash2, Package, ChevronRight, Image as ImageIcon, Filter,
-  ShoppingBag, History
+  ShoppingBag, History, ClipboardList, Truck, Eye
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -16,9 +16,11 @@ const Marketplace = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [purchases, setPurchases] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('vendors'); // vendors, products, purchases
+  const [view, setView] = useState('vendors'); // vendors, products, purchases, orders
   const [toast, setToast] = useState(null);
   
   const { user, logout, getToken } = useAuth();
