@@ -527,16 +527,78 @@ async def get_assigned_vendors(user=Depends(get_clinic_user)):
     return vendors
 
 @api_router.get("/clinic/vendors/{vendor_id}/products")
-async def get_vendor_products_for_clinic(vendor_id: str, user=Depends(get_clinic_user)):
+async def get_vendor_products_for_clinic(vendor_id: str, user=Depends(get_clinic_user), category: Optional[str] = None):
     clinic = await db.clinics.find_one({"id": user["clinic_id"]})
     if vendor_id not in clinic.get("assigned_vendors", []):
         raise HTTPException(status_code=403, detail="Vendor not assigned to your clinic")
     
+    query = {"vendor_id": vendor_id, "is_active": True, "is_approved": True}
+    if category:
+        query["category"] = category
+    
+    products = await db.products.find(query, {"_id": 0}).to_list(1000)
+    return products
+
+@api_router.get("/clinic/categories")
+async def get_clinic_categories(user=Depends(get_clinic_user)):
+    """Get all categories from approved products of assigned vendors"""
+    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
+    assigned_ids = clinic.get("assigned_vendors", [])
+    
     products = await db.products.find(
-        {"vendor_id": vendor_id, "is_active": True},
+        {"vendor_id": {"$in": assigned_ids}, "is_approved": True},
+        {"category": 1, "_id": 0}
+    ).to_list(1000)
+    categories = list(set(p["category"] for p in products if "category" in p))
+    return categories
+
+@api_router.get("/clinic/products")
+async def get_all_clinic_products(user=Depends(get_clinic_user), vendor_id: Optional[str] = None, category: Optional[str] = None):
+    """Get all approved products from assigned vendors with optional filters"""
+    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
+    assigned_ids = clinic.get("assigned_vendors", [])
+    
+    query = {"vendor_id": {"$in": assigned_ids}, "is_active": True, "is_approved": True}
+    if vendor_id and vendor_id in assigned_ids:
+        query["vendor_id"] = vendor_id
+    if category:
+        query["category"] = category
+    
+    products = await db.products.find(query, {"_id": 0}).to_list(1000)
+    for product in products:
+        vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "company_name": 1})
+        product["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    return products
+
+@api_router.get("/clinic/purchases")
+async def get_clinic_purchases(user=Depends(get_clinic_user)):
+    """Get all purchased products from paid orders"""
+    orders = await db.orders.find(
+        {"clinic_id": user["clinic_id"], "payment_status": "paid"},
         {"_id": 0}
     ).to_list(1000)
-    return products
+    
+    # Aggregate all purchased products
+    purchases = []
+    for order in orders:
+        for item in order.get("items", []):
+            purchases.append({
+                "order_id": order["id"],
+                "order_date": order["created_at"],
+                "product_name": item["name"],
+                "product_id": item["product_id"],
+                "price": item["price"],
+                "quantity": item["quantity"],
+                "subtotal": item["subtotal"],
+                "vendor_id": order["vendor_id"]
+            })
+    
+    # Add vendor names
+    for purchase in purchases:
+        vendor = await db.vendors.find_one({"id": purchase["vendor_id"]}, {"_id": 0, "company_name": 1})
+        purchase["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    
+    return purchases
 
 @api_router.post("/clinic/orders", response_model=OrderResponse)
 async def create_order(data: OrderCreate, user=Depends(get_clinic_user)):
