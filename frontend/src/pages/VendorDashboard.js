@@ -406,6 +406,108 @@ const OrdersTab = ({ orders, onUpdateStatus }) => {
   );
 };
 
+const VendorInventoryTab = ({ inventory }) => {
+  const { items, summary } = inventory;
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+          Inventory
+        </h1>
+        <p className="text-slate-500 mt-1">Track your product stock and earnings</p>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Products</div>
+          <div className="text-3xl font-bold text-slate-900">{summary.total_products || 0}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Stock Units</div>
+          <div className="text-3xl font-bold text-slate-900">{summary.total_stock_units || 0}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Stock Value</div>
+          <div className="text-3xl font-bold text-slate-900">${summary.total_stock_value?.toFixed(2) || '0.00'}</div>
+        </div>
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+          <div className="text-sm opacity-90 mb-1">Your Potential Earnings</div>
+          <div className="text-3xl font-bold">${summary.total_vendor_earnings?.toFixed(2) || '0.00'}</div>
+        </div>
+      </div>
+
+      {/* Commission Info */}
+      <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <DollarSign className="w-5 h-5 text-orange-600 mt-0.5" />
+          <div>
+            <div className="font-medium text-orange-900">Commission Breakdown</div>
+            <div className="text-sm text-orange-700 mt-1">
+              VIDAI takes a commission on each sale. The rates shown below are set by admin during product approval.
+              Your earnings = Product Price - VIDAI Commission.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Inventory Table */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>SKU</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Commission</th>
+              <th>You Receive</th>
+              <th>Potential Earnings</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan="8" className="text-center py-12 text-slate-500">
+                  No inventory data. Add products to see inventory.
+                </td>
+              </tr>
+            ) : (
+              items.map(item => (
+                <tr key={item.product_id} className="table-row-hover">
+                  <td className="font-medium text-slate-900">{item.product_name}</td>
+                  <td className="text-slate-500">{item.sku}</td>
+                  <td className="price-tag">${item.price?.toFixed(2)}</td>
+                  <td>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      item.stock_quantity > 10 ? 'badge-success' : 
+                      item.stock_quantity > 0 ? 'badge-warning' : 'badge-error'
+                    }`}>
+                      {item.stock_quantity} units
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      item.is_approved ? 'badge-success' : 'badge-warning'
+                    }`}>
+                      {item.is_approved ? 'Approved' : 'Pending'}
+                    </span>
+                  </td>
+                  <td className="text-slate-500">{item.commission_rate}%</td>
+                  <td className="text-green-600 font-medium">${item.vendor_amount?.toFixed(2)}</td>
+                  <td className="font-medium text-slate-900">${item.potential_earnings?.toFixed(2)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHeaders }) => {
   const [formData, setFormData] = useState({
     name: '', description: '', price: '', category: categories[0], 
