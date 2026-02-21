@@ -587,11 +587,11 @@ const ClinicModal = ({ isOpen, onClose, onSuccess, authHeaders }) => {
 
   return (
     <div className="modal-backdrop modal-overlay" onClick={onClose}>
-      <div className="modal-box modal-content max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
+      <div className="modal-box modal-content max-w-2xl" onClick={e => e.stopPropagation()}>
+        <div className="modal-header sticky top-0 bg-white z-10 border-b border-slate-100 pb-4">
           <h2 className="text-xl font-bold text-slate-900">Add New Clinic</h2>
         </div>
-        <form onSubmit={handleSubmit} className="modal-body">
+        <form onSubmit={handleSubmit} className="modal-body pt-4">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
               {error}
