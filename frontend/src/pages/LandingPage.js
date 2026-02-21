@@ -427,15 +427,15 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-[700px]" data-testid="hero-section">
-        {/* Lab Background Image - Two scientists with microscope in IVF lab */}
+        {/* Lab Background Image - IVF lab with scientists */}
         <div className="absolute inset-0">
           <img
-            src="https://static.prod-images.emergentagent.com/jobs/fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/images/1a1f1ae5352e03563b8b33ed0531f31a89b01992d16b708bd31cfbe17df833e8.png"
-            alt="IVF laboratory with scientists and incubator"
-            className="w-full h-full object-cover object-center"
+            src="https://customer-assets.emergentagent.com/job_fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/artifacts/dlymu9k0_image.png"
+            alt="IVF laboratory with scientists and microscope"
+            className="w-full h-full object-cover object-top"
           />
           {/* Gradient Overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/40"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -472,181 +472,6 @@ const LandingPage = () => {
                 >
                   Vendor Portal
                 </button>
-              </div>
-            </div>
-
-            {/* Right Side - Device Mockups */}
-            <div className="hidden lg:flex absolute right-0 bottom-0 items-end" style={{ right: '0%' }}>
-              {/* Phone Mockup - Positioned in front of laptop */}
-              <div className="relative z-30 transform translate-x-24 mb-6">
-                <div className="bg-slate-900 rounded-[36px] p-2.5 w-[180px] shadow-2xl border-[5px] border-slate-800">
-                  <div className="bg-white rounded-[28px] overflow-hidden">
-                    {/* Phone Header */}
-                    <div className="bg-white p-3 flex items-center justify-between border-b">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">V</span>
-                        </div>
-                        <span className="text-xs font-semibold text-slate-700">Marketplace</span>
-                      </div>
-                    </div>
-                    {/* Phone Content */}
-                    <div className="p-3 h-[300px] bg-slate-50">
-                      {/* Product Cards */}
-                      <div className="space-y-2">
-                        <div className="bg-white rounded-xl p-2 shadow-sm flex items-center gap-2">
-                          <img src="https://images.unsplash.com/photo-1748278739348-d9886621530f?w=60&h=60&fit=crop" alt="Centrifuge" className="w-12 h-12 rounded-lg object-cover" />
-                          <div className="flex-1">
-                            <div className="text-[10px] font-semibold text-slate-800">Centrifuge</div>
-                            <div className="text-[9px] text-slate-500">Lab Equipment</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$3,200</div>
-                          </div>
-                        </div>
-                        <div className="bg-white rounded-xl p-2 shadow-sm flex items-center gap-2">
-                          <img src="https://images.pexels.com/photos/8325715/pexels-photo-8325715.jpeg?auto=compress&w=60&h=60&fit=crop" alt="Test Tubes" className="w-12 h-12 rounded-lg object-cover" />
-                          <div className="flex-1">
-                            <div className="text-[10px] font-semibold text-slate-800">Test Tubes Set</div>
-                            <div className="text-[9px] text-slate-500">Consumables</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$149</div>
-                          </div>
-                        </div>
-                        <div className="bg-white rounded-xl p-2 shadow-sm flex items-center gap-2">
-                          <img src="https://images.pexels.com/photos/4031445/pexels-photo-4031445.jpeg?auto=compress&w=60&h=60&fit=crop" alt="Petri Dish" className="w-12 h-12 rounded-lg object-cover" />
-                          <div className="flex-1">
-                            <div className="text-[10px] font-semibold text-slate-800">Culture Media</div>
-                            <div className="text-[9px] text-slate-500">IVF Products</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$299</div>
-                          </div>
-                        </div>
-                        <div className="bg-white rounded-xl p-2 shadow-sm flex items-center gap-2">
-                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center">
-                            <span className="text-lg">🧬</span>
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-[10px] font-semibold text-slate-800">Genetic Kit</div>
-                            <div className="text-[9px] text-slate-500">Testing</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$850</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Laptop Mockup */}
-              <div className="relative z-20">
-                <div className="bg-slate-800 rounded-t-2xl p-3 w-[560px] shadow-2xl">
-                  <div className="flex gap-2 mb-3">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  </div>
-                  <div className="bg-white rounded-xl overflow-hidden">
-                    {/* Browser Header */}
-                    <div className="bg-white px-4 py-3 flex items-center gap-3 border-b">
-                      <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">V</span>
-                      </div>
-                      <span className="text-sm font-semibold text-slate-700">Marketplace</span>
-                      <div className="flex-1 mx-4">
-                        <div className="bg-slate-100 rounded-full px-4 py-2 flex items-center gap-2">
-                          <Search className="w-4 h-4 text-slate-400" />
-                          <span className="text-sm text-slate-400">Search products...</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 items-center">
-                        <div className="text-slate-400">
-                          <User className="w-5 h-5" />
-                        </div>
-                        <div className="relative">
-                          <ShoppingCart className="w-5 h-5 text-slate-400" />
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center">
-                            <span className="text-[8px] text-white font-bold">3</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Marketplace Content */}
-                    <div className="p-4 h-[300px] bg-slate-50">
-                      {/* Category Headers */}
-                      <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <div className="text-sm font-bold text-slate-800">Equipment</div>
-                          <div className="text-[10px] text-slate-500">For IVF Clinics</div>
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-slate-800">IVF Consumables</div>
-                          <div className="text-[10px] text-slate-500">Genetic Testing</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg"></div>
-                          <div>
-                            <div className="text-[10px] font-semibold text-slate-800">EMR Ready</div>
-                            <div className="text-[8px] text-slate-500">Integrated</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Product Grid with Real Images */}
-                      <div className="grid grid-cols-3 gap-3">
-                        {/* Equipment Column */}
-                        <div className="space-y-2">
-                          <div className="bg-white rounded-xl p-2 shadow-sm">
-                            <img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?w=150&h=100&fit=crop" alt="Lab Equipment" className="w-full h-16 object-cover rounded-lg mb-2" />
-                            <div className="text-[10px] font-semibold text-slate-800">IVF Incubator</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$12,500</div>
-                            <button className="w-full bg-teal-500 text-white text-[8px] py-1 rounded-lg mt-1 font-medium">Add to Cart</button>
-                          </div>
-                          <div className="bg-white rounded-xl p-2 shadow-sm">
-                            <img src="https://images.unsplash.com/photo-1748278739348-d9886621530f?w=150&h=100&fit=crop" alt="Centrifuge" className="w-full h-16 object-cover rounded-lg mb-2" />
-                            <div className="text-[10px] font-semibold text-slate-800">Centrifuge</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$3,200</div>
-                            <button className="w-full bg-teal-500 text-white text-[8px] py-1 rounded-lg mt-1 font-medium">Add to Cart</button>
-                          </div>
-                        </div>
-                        
-                        {/* Consumables Column */}
-                        <div className="space-y-2">
-                          <div className="bg-white rounded-xl p-2 shadow-sm">
-                            <img src="https://images.pexels.com/photos/8325715/pexels-photo-8325715.jpeg?auto=compress&w=150&h=100&fit=crop" alt="Test Tubes" className="w-full h-16 object-cover rounded-lg mb-2" />
-                            <div className="text-[10px] font-semibold text-slate-800">Test Tube Set</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$149</div>
-                            <button className="w-full bg-teal-500 text-white text-[8px] py-1 rounded-lg mt-1 font-medium">Add to Cart</button>
-                          </div>
-                          <div className="bg-white rounded-xl p-2 shadow-sm">
-                            <img src="https://images.pexels.com/photos/4031445/pexels-photo-4031445.jpeg?auto=compress&w=150&h=100&fit=crop" alt="Culture Media" className="w-full h-16 object-cover rounded-lg mb-2" />
-                            <div className="text-[10px] font-semibold text-slate-800">Culture Media</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$299</div>
-                            <button className="w-full bg-teal-500 text-white text-[8px] py-1 rounded-lg mt-1 font-medium">Add to Cart</button>
-                          </div>
-                        </div>
-                        
-                        {/* Genetic Testing Column */}
-                        <div className="space-y-2">
-                          <div className="bg-white rounded-xl p-2 shadow-sm">
-                            <img src="https://images.unsplash.com/photo-1601839215170-6ce5854968d6?w=150&h=100&fit=crop" alt="Lab Samples" className="w-full h-16 object-cover rounded-lg mb-2" />
-                            <div className="text-[10px] font-semibold text-slate-800">PGT-A Kit</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$850</div>
-                            <button className="w-full bg-teal-500 text-white text-[8px] py-1 rounded-lg mt-1 font-medium">Add to Cart</button>
-                          </div>
-                          <div className="bg-white rounded-xl p-2 shadow-sm">
-                            <div className="w-full h-16 bg-gradient-to-br from-indigo-100 to-blue-200 rounded-lg mb-2 flex items-center justify-center">
-                              <span className="text-2xl">🧬</span>
-                            </div>
-                            <div className="text-[10px] font-semibold text-slate-800">Genetic Panel</div>
-                            <div className="text-[10px] text-teal-600 font-bold">$1,200</div>
-                            <button className="w-full bg-teal-500 text-white text-[8px] py-1 rounded-lg mt-1 font-medium">Add to Cart</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {/* Laptop Base */}
-                <div className="bg-gradient-to-b from-slate-700 to-slate-600 h-5 rounded-b-xl shadow-lg"></div>
-                <div className="bg-gradient-to-b from-slate-600 to-slate-500 h-2 mx-28 rounded-b-xl"></div>
               </div>
             </div>
           </div>
