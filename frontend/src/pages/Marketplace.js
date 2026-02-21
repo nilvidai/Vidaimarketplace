@@ -263,24 +263,6 @@ const Marketplace = () => {
                 );
               })}
             </nav>
-
-            {/* Vendor Filter */}
-            {vendors.length > 0 && (
-              <div className="mt-8">
-                <h2 className="font-semibold text-slate-900 mb-4">Filter by Vendor</h2>
-                <select
-                  value={selectedVendorFilter}
-                  onChange={(e) => setSelectedVendorFilter(e.target.value)}
-                  className="w-full form-input text-sm"
-                  data-testid="vendor-filter"
-                >
-                  <option value="all">All Vendors</option>
-                  {vendors.map(vendor => (
-                    <option key={vendor.id} value={vendor.id}>{vendor.company_name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </aside>
 
           {/* Product Grid */}
