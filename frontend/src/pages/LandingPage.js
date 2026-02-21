@@ -340,7 +340,7 @@ const LandingPage = () => {
           </p>
           <div className="flex justify-center gap-4 mt-10">
             <button
-              onClick={() => setShowClinicLogin(true)}
+              onClick={handleMarketplaceClick}
               className="btn-primary px-8 py-4 rounded-lg font-semibold text-lg"
               data-testid="cta-start-btn"
             >
