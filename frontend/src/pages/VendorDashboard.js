@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Package, ShoppingBag, LogOut, Plus, Edit2, Trash2, 
-  X, Image as ImageIcon, DollarSign
+  X, Image as ImageIcon, DollarSign, Boxes
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
