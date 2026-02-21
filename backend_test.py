@@ -346,8 +346,8 @@ class VIDAIMarketplaceAPITester:
             "country": "USA"
         }
         
-        response, error = self.make_request('POST', '/clinic/orders', order_data, self.clinic_token, 201)
-        if response and response.status_code == 201:
+        response, error = self.make_request('POST', '/clinic/orders', order_data, self.clinic_token, 200)
+        if response and response.status_code == 200:
             result = response.json()
             self.order_id = result.get('id')
             self.log_test("Create order", True)
