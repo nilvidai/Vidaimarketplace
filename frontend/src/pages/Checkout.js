@@ -281,20 +281,28 @@ const Checkout = () => {
             <div className="bg-white rounded-xl border border-slate-100 p-6 sticky top-24">
               <h2 className="font-semibold text-slate-900 mb-4">Order Summary</h2>
               
-              {selectedVendor && (
+              {existingOrder && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-amber-800">
+                    Resuming payment for existing order #{existingOrder.id.slice(0, 8)}
+                  </p>
+                </div>
+              )}
+              
+              {vendorName && (
                 <div className="text-sm text-slate-500 mb-4">
-                  Vendor: <span className="text-slate-900 font-medium">{selectedVendor.company_name}</span>
+                  Vendor: <span className="text-slate-900 font-medium">{vendorName}</span>
                 </div>
               )}
 
               <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
-                {cart.map(item => (
-                  <div key={item.product.id} className="flex items-center gap-3">
+                {orderItems.map((item, idx) => (
+                  <div key={item.product_id || idx} className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      {item.product.image_url ? (
+                      {item.image_url ? (
                         <img 
-                          src={item.product.image_url} 
-                          alt={item.product.name}
+                          src={item.image_url} 
+                          alt={item.name}
                           className="w-full h-full object-cover rounded-lg"
                         />
                       ) : (
@@ -302,11 +310,11 @@ const Checkout = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{item.product.name}</p>
+                      <p className="text-sm font-medium text-slate-900 truncate">{item.name}</p>
                       <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
                     </div>
                     <p className="text-sm font-medium text-slate-900">
-                      ${(item.product.price * item.quantity).toFixed(2)}
+                      ${(item.subtotal || item.price * item.quantity).toFixed(2)}
                     </p>
                   </div>
                 ))}
@@ -317,7 +325,7 @@ const Checkout = () => {
               <div className="space-y-2 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Subtotal</span>
-                  <span className="text-slate-900">${getCartTotal().toFixed(2)}</span>
+                  <span className="text-slate-900">${orderTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Shipping</span>
@@ -334,7 +342,7 @@ const Checkout = () => {
               <div className="flex justify-between mb-6">
                 <span className="font-semibold text-slate-900">Total</span>
                 <span className="font-bold text-2xl text-[#E07A5F]">
-                  ${getCartTotal().toFixed(2)}
+                  ${orderTotal.toFixed(2)}
                 </span>
               </div>
 
@@ -352,7 +360,7 @@ const Checkout = () => {
                 ) : (
                   <>
                     <CreditCard className="w-5 h-5" />
-                    Pay ${getCartTotal().toFixed(2)}
+                    Pay ${orderTotal.toFixed(2)}
                   </>
                 )}
               </button>
