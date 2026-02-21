@@ -139,6 +139,22 @@ const Marketplace = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                data-testid="back-btn"
+                title="Go Back"
+              >
+                <ArrowLeft className="w-5 h-5 text-slate-600" />
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                data-testid="home-btn"
+                title="Home"
+              >
+                <Home className="w-5 h-5 text-slate-600" />
+              </button>
               <span className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
                 VIDAI
               </span>
