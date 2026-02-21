@@ -491,12 +491,17 @@ class VIDAIMarketplaceAPITester:
         else:
             self.log_test("Get assigned vendors", False, error)
             
-        # Get vendor products for clinic
+        # Get vendor products for clinic (should only show approved products)
         response, error = self.make_request('GET', f'/clinic/vendors/{self.vendor_id}/products', token=self.clinic_token, expected_status=200)
         if response and response.status_code == 200:
             products = response.json()
             if isinstance(products, list):
-                self.log_test("Get vendor products for clinic", True)
+                # Check that all products are approved
+                all_approved = all(p.get('is_approved') == True for p in products)
+                if all_approved or len(products) == 0:
+                    self.log_test("Get vendor products for clinic (only approved)", True)
+                else:
+                    self.log_test("Get vendor products for clinic (only approved)", False, "Found unapproved products in clinic view")
             else:
                 self.log_test("Get vendor products for clinic", False, "Invalid products response")
         else:
