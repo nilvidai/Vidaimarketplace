@@ -86,6 +86,19 @@ const Marketplace = () => {
     }
   };
 
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API}/clinic/orders`, authHeaders);
+      setOrders(res.data);
+      setView('orders');
+    } catch (err) {
+      showToast('Failed to fetch orders', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
