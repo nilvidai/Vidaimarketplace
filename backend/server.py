@@ -741,13 +741,57 @@ async def update_order_status(order_id: str, status: str, user=Depends(get_vendo
     if status not in valid_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
     
+    update_data = {"status": status}
+    
+    # Add timestamps for status changes
+    if status == "shipped":
+        update_data["shipped_at"] = datetime.now(timezone.utc).isoformat()
+    elif status == "delivered":
+        update_data["delivered_at"] = datetime.now(timezone.utc).isoformat()
+    
     result = await db.orders.update_one(
         {"id": order_id, "vendor_id": user["vendor_id"]},
-        {"$set": {"status": status}}
+        {"$set": update_data}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
     return {"message": "Order status updated"}
+
+@api_router.put("/vendor/orders/{order_id}/shipping")
+async def update_order_shipping(order_id: str, data: ShippingUpdate, user=Depends(get_vendor_user)):
+    """Update shipping/tracking information for an order"""
+    order = await db.orders.find_one({"id": order_id, "vendor_id": user["vendor_id"]})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    update_data = {}
+    if data.tracking_number is not None:
+        update_data["tracking_number"] = data.tracking_number
+    if data.carrier is not None:
+        update_data["carrier"] = data.carrier
+    if data.estimated_delivery is not None:
+        update_data["estimated_delivery"] = data.estimated_delivery
+    
+    if update_data:
+        await db.orders.update_one(
+            {"id": order_id},
+            {"$set": update_data}
+        )
+    
+    updated_order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    return updated_order
+
+@api_router.get("/vendor/orders/{order_id}")
+async def get_vendor_order_detail(order_id: str, user=Depends(get_vendor_user)):
+    """Get detailed order information for vendor"""
+    order = await db.orders.find_one({"id": order_id, "vendor_id": user["vendor_id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    clinic = await db.clinics.find_one({"id": order["clinic_id"]}, {"_id": 0, "clinic_name": 1})
+    order["clinic_name"] = clinic["clinic_name"] if clinic else "Unknown"
+    
+    return order
 
 # ==================== CLINIC ROUTES ====================
 
