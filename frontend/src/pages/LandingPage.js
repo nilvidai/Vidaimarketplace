@@ -430,8 +430,8 @@ const LandingPage = () => {
         {/* Lab Background Image - Two scientists with microscope in IVF lab */}
         <div className="absolute inset-0">
           <img
-            src="https://static.prod-images.emergentagent.com/jobs/fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/images/b23fde000d316b1a0d0fb94614363cd36c319e70d4e9443a6e2b7733784bc8e7.png"
-            alt="Two scientists examining samples in IVF laboratory"
+            src="https://static.prod-images.emergentagent.com/jobs/fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/images/1a1f1ae5352e03563b8b33ed0531f31a89b01992d16b708bd31cfbe17df833e8.png"
+            alt="IVF laboratory with scientists and incubator"
             className="w-full h-full object-cover object-center"
           />
           {/* Gradient Overlay for text readability */}
