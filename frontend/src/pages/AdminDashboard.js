@@ -385,6 +385,71 @@ const ClinicsTab = ({ clinics, onDelete, onAdd }) => (
   </div>
 );
 
+const ProductsApprovalTab = ({ products, onApprove }) => (
+  <div>
+    <div className="mb-8">
+      <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+        Product Approvals
+      </h1>
+      <p className="text-slate-500 mt-1">Review and approve vendor products</p>
+    </div>
+
+    {products.length === 0 ? (
+      <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="w-8 h-8 text-green-600" />
+        </div>
+        <h3 className="text-lg font-semibold text-slate-900 mb-2">All caught up!</h3>
+        <p className="text-slate-500">No products pending approval</p>
+      </div>
+    ) : (
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {products.map(product => (
+          <div key={product.id} className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+            <div className="h-40 bg-slate-100 flex items-center justify-center">
+              {product.image_url ? (
+                <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+              ) : (
+                <ImageIcon className="w-12 h-12 text-slate-300" />
+              )}
+            </div>
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-[#E07A5F] font-medium">{product.category}</span>
+                <span className="text-xs text-slate-500">by {product.vendor_name}</span>
+              </div>
+              <h3 className="font-semibold text-slate-900 mb-1">{product.name}</h3>
+              <p className="text-sm text-slate-500 mb-3 line-clamp-2">{product.description}</p>
+              <div className="flex items-center justify-between mb-4">
+                <span className="price-tag text-lg">${product.price?.toFixed(2)}</span>
+                <span className="text-xs text-slate-500">SKU: {product.sku}</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onApprove(product.id, true)}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors"
+                  data-testid={`approve-product-${product.id}`}
+                >
+                  <Check className="w-4 h-4" />
+                  Approve
+                </button>
+                <button
+                  onClick={() => onApprove(product.id, false)}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors"
+                  data-testid={`reject-product-${product.id}`}
+                >
+                  <X className="w-4 h-4" />
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
 const AssignmentsTab = ({ clinics, vendors, onAssign, authHeaders, showToast }) => {
   const [assignments, setAssignments] = useState({});
 
