@@ -1279,6 +1279,283 @@ async def stripe_webhook(request: Request):
 
 # ==================== PUBLIC ROUTES ====================
 
+# ==================== CLINIC DASHBOARD ROUTES ====================
+
+@api_router.get("/clinic/dashboard/summary")
+async def get_clinic_dashboard_summary(user=Depends(get_clinic_user)):
+    """Get dashboard summary for clinic"""
+    clinic_id = user["clinic_id"]
+    
+    # Get orders summary
+    orders = await db.orders.find({"clinic_id": clinic_id}, {"_id": 0}).to_list(1000)
+    total_orders = len(orders)
+    pending_orders = len([o for o in orders if o["status"] in ["pending", "confirmed", "processing"]])
+    shipped_orders = len([o for o in orders if o["status"] == "shipped"])
+    delivered_orders = len([o for o in orders if o["status"] == "delivered"])
+    total_spent = sum(o["total_amount"] for o in orders if o.get("payment_status") == "paid")
+    
+    # Get recent orders
+    recent_orders = sorted(orders, key=lambda x: x.get("created_at", ""), reverse=True)[:5]
+    for order in recent_orders:
+        vendor = await db.vendors.find_one({"id": order["vendor_id"]}, {"_id": 0, "company_name": 1})
+        order["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    
+    return {
+        "total_orders": total_orders,
+        "pending_orders": pending_orders,
+        "shipped_orders": shipped_orders,
+        "delivered_orders": delivered_orders,
+        "total_spent": round(total_spent, 2),
+        "recent_orders": recent_orders
+    }
+
+@api_router.get("/clinic/dashboard/notifications")
+async def get_clinic_notifications(user=Depends(get_clinic_user)):
+    """Get notifications for clinic (order updates, new products, system alerts)"""
+    clinic_id = user["clinic_id"]
+    
+    # Get clinic's assigned vendors
+    clinic = await db.clinics.find_one({"id": clinic_id})
+    assigned_vendors = clinic.get("assigned_vendors", [])
+    
+    notifications = []
+    
+    # Order status updates (orders updated in last 7 days)
+    from datetime import timedelta
+    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    
+    orders = await db.orders.find({
+        "clinic_id": clinic_id,
+        "updated_at": {"$gte": seven_days_ago}
+    }, {"_id": 0}).to_list(100)
+    
+    for order in orders:
+        vendor = await db.vendors.find_one({"id": order["vendor_id"]}, {"_id": 0, "company_name": 1})
+        if order["status"] == "shipped":
+            notifications.append({
+                "id": f"order-shipped-{order['id']}",
+                "type": "order_shipped",
+                "title": "Order Shipped",
+                "message": f"Your order #{order['id'][:8]} has been shipped by {vendor['company_name'] if vendor else 'vendor'}",
+                "order_id": order["id"],
+                "created_at": order.get("shipped_at", order.get("updated_at", "")),
+                "read": False,
+                "icon": "truck"
+            })
+        elif order["status"] == "delivered":
+            notifications.append({
+                "id": f"order-delivered-{order['id']}",
+                "type": "order_delivered",
+                "title": "Order Delivered",
+                "message": f"Your order #{order['id'][:8]} has been delivered",
+                "order_id": order["id"],
+                "created_at": order.get("delivered_at", order.get("updated_at", "")),
+                "read": False,
+                "icon": "check-circle"
+            })
+    
+    # New products from assigned vendors (added in last 7 days)
+    new_products = await db.products.find({
+        "vendor_id": {"$in": assigned_vendors},
+        "is_approved": True,
+        "is_active": True,
+        "created_at": {"$gte": seven_days_ago}
+    }, {"_id": 0}).to_list(20)
+    
+    for product in new_products:
+        vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "company_name": 1})
+        notifications.append({
+            "id": f"new-product-{product['id']}",
+            "type": "new_product",
+            "title": "New Product Available",
+            "message": f"{product['name']} is now available from {vendor['company_name'] if vendor else 'vendor'}",
+            "product_id": product["id"],
+            "created_at": product.get("created_at", ""),
+            "read": False,
+            "icon": "package"
+        })
+    
+    # Sort by date, most recent first
+    notifications.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    
+    return notifications[:20]
+
+@api_router.get("/clinic/dashboard/offers")
+async def get_clinic_offers(user=Depends(get_clinic_user)):
+    """Get special offers and promotions for clinic"""
+    clinic_id = user["clinic_id"]
+    
+    # Get clinic's assigned vendors
+    clinic = await db.clinics.find_one({"id": clinic_id})
+    assigned_vendors = clinic.get("assigned_vendors", [])
+    
+    # Check for active offers
+    offers = await db.offers.find({
+        "$or": [
+            {"vendor_id": {"$in": assigned_vendors}},
+            {"type": "platform"}  # Platform-wide offers
+        ],
+        "is_active": True,
+        "expiry_date": {"$gte": datetime.now(timezone.utc).isoformat()}
+    }, {"_id": 0}).to_list(20)
+    
+    # If no offers exist, create some sample promotional offers
+    if len(offers) == 0:
+        # Generate dynamic offers based on vendors
+        vendors = await db.vendors.find(
+            {"id": {"$in": assigned_vendors}, "is_active": True},
+            {"_id": 0, "id": 1, "company_name": 1}
+        ).to_list(10)
+        
+        sample_offers = [
+            {
+                "id": "bulk-discount-2024",
+                "type": "bulk_discount",
+                "title": "Bulk Order Savings",
+                "description": "Order $5,000+ and get 10% off your total purchase",
+                "discount_type": "percentage",
+                "discount_value": 10,
+                "min_order_amount": 5000,
+                "code": "BULK10",
+                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                "is_active": True,
+                "icon": "percent"
+            },
+            {
+                "id": "free-shipping-2024",
+                "type": "free_shipping",
+                "title": "Free Shipping",
+                "description": "Free shipping on orders over $1,000",
+                "discount_type": "shipping",
+                "min_order_amount": 1000,
+                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=60)).isoformat(),
+                "is_active": True,
+                "icon": "truck"
+            },
+            {
+                "id": "new-customer-2024",
+                "type": "first_order",
+                "title": "First Order Discount",
+                "description": "5% off your first order with any new vendor",
+                "discount_type": "percentage",
+                "discount_value": 5,
+                "code": "WELCOME5",
+                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=90)).isoformat(),
+                "is_active": True,
+                "icon": "gift"
+            }
+        ]
+        
+        # Add vendor-specific offers
+        for vendor in vendors[:2]:
+            sample_offers.append({
+                "id": f"vendor-promo-{vendor['id'][:8]}",
+                "type": "vendor_promo",
+                "title": f"{vendor['company_name']} Special",
+                "description": f"Exclusive deal from {vendor['company_name']} - 8% off all products",
+                "discount_type": "percentage",
+                "discount_value": 8,
+                "vendor_id": vendor["id"],
+                "vendor_name": vendor["company_name"],
+                "code": f"VND{vendor['id'][:4].upper()}",
+                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
+                "is_active": True,
+                "icon": "tag"
+            })
+        
+        return sample_offers
+    
+    return offers
+
+@api_router.get("/clinic/dashboard/pricing-trends")
+async def get_clinic_pricing_trends(user=Depends(get_clinic_user)):
+    """Get pricing trends from different vendors for comparison"""
+    clinic_id = user["clinic_id"]
+    
+    # Get clinic's assigned vendors
+    clinic = await db.clinics.find_one({"id": clinic_id})
+    assigned_vendors = clinic.get("assigned_vendors", [])
+    
+    # Get all products from assigned vendors
+    products = await db.products.find({
+        "vendor_id": {"$in": assigned_vendors},
+        "is_approved": True,
+        "is_active": True
+    }, {"_id": 0}).to_list(1000)
+    
+    # Get vendors info
+    vendors = await db.vendors.find(
+        {"id": {"$in": assigned_vendors}},
+        {"_id": 0, "id": 1, "company_name": 1}
+    ).to_list(100)
+    vendor_map = {v["id"]: v["company_name"] for v in vendors}
+    
+    # Group products by category
+    categories = {}
+    for product in products:
+        cat = product.get("category", "Other")
+        if cat not in categories:
+            categories[cat] = []
+        categories[cat].append({
+            "product_id": product["id"],
+            "name": product["name"],
+            "price": product["price"],
+            "vendor_id": product["vendor_id"],
+            "vendor_name": vendor_map.get(product["vendor_id"], "Unknown")
+        })
+    
+    # Create pricing comparison data
+    pricing_trends = []
+    for category, prods in categories.items():
+        if len(prods) == 0:
+            continue
+            
+        prices = [p["price"] for p in prods]
+        avg_price = sum(prices) / len(prices)
+        min_price = min(prices)
+        max_price = max(prices)
+        
+        # Get vendor with lowest price
+        cheapest = min(prods, key=lambda x: x["price"])
+        
+        pricing_trends.append({
+            "category": category,
+            "product_count": len(prods),
+            "avg_price": round(avg_price, 2),
+            "min_price": round(min_price, 2),
+            "max_price": round(max_price, 2),
+            "price_range": round(max_price - min_price, 2),
+            "cheapest_vendor": cheapest["vendor_name"],
+            "products": prods[:5]  # Top 5 products in category
+        })
+    
+    # Sort by product count
+    pricing_trends.sort(key=lambda x: x["product_count"], reverse=True)
+    
+    # Create vendor comparison
+    vendor_comparison = []
+    for vendor_id in assigned_vendors:
+        vendor_products = [p for p in products if p["vendor_id"] == vendor_id]
+        if len(vendor_products) == 0:
+            continue
+            
+        vendor_prices = [p["price"] for p in vendor_products]
+        vendor_comparison.append({
+            "vendor_id": vendor_id,
+            "vendor_name": vendor_map.get(vendor_id, "Unknown"),
+            "total_products": len(vendor_products),
+            "avg_price": round(sum(vendor_prices) / len(vendor_prices), 2),
+            "min_price": round(min(vendor_prices), 2),
+            "max_price": round(max(vendor_prices), 2)
+        })
+    
+    return {
+        "by_category": pricing_trends,
+        "by_vendor": vendor_comparison,
+        "total_products": len(products),
+        "total_vendors": len(vendors)
+    }
+
 @api_router.get("/")
 async def root():
     return {"message": "VIDAI IVF Marketplace API"}
