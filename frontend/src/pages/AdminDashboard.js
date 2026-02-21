@@ -202,6 +202,10 @@ const AdminDashboard = () => {
       fetchCommissionReport();
     } else if (tabId === 'orders') {
       fetchOrders();
+    } else if (tabId === 'enquiries') {
+      fetchEnquiries();
+    } else if (tabId === 'settings') {
+      fetchSettings();
     }
   };
 
@@ -210,9 +214,11 @@ const AdminDashboard = () => {
     { id: 'clinics', label: 'Clinics', icon: Users, count: clinics.length },
     { id: 'products', label: 'Approvals', icon: Package, count: pendingProducts.length },
     { id: 'orders', label: 'Orders', icon: ClipboardList },
+    { id: 'enquiries', label: 'Enquiries', icon: MessageSquare },
     { id: 'inventory', label: 'Inventory', icon: Boxes },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
-    { id: 'assignments', label: 'Assignments', icon: Link2 }
+    { id: 'assignments', label: 'Assignments', icon: Link2 },
+    { id: 'settings', label: 'Settings', icon: Settings }
   ];
 
   return (
