@@ -118,8 +118,13 @@ const Marketplace = () => {
   };
 
   const goBack = () => {
-    setView('vendors');
-    setProducts([]);
+    if (view === 'purchases') {
+      setView('vendors');
+    } else {
+      setView('vendors');
+      setProducts([]);
+      setSelectedCategory('');
+    }
   };
 
   return (
@@ -142,6 +147,15 @@ const Marketplace = () => {
                 <div className="text-sm font-medium text-slate-900">{user?.clinic_name}</div>
                 <div className="text-xs text-slate-500">{user?.name}</div>
               </div>
+
+              <button
+                onClick={fetchPurchases}
+                className={`p-2 hover:bg-slate-100 rounded-lg transition-colors ${view === 'purchases' ? 'bg-slate-100' : ''}`}
+                data-testid="purchases-btn"
+                title="My Purchases"
+              >
+                <History className="w-6 h-6 text-slate-700" />
+              </button>
               
               <button
                 onClick={() => navigate('/marketplace/cart')}
@@ -160,6 +174,7 @@ const Marketplace = () => {
                 onClick={() => navigate('/marketplace/orders')}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                 data-testid="orders-btn"
+                title="Order History"
               >
                 <Package className="w-6 h-6 text-slate-700" />
               </button>
