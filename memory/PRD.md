@@ -76,6 +76,17 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - Admin Settings tab: Configure contact email and notification preferences
 - Summary cards showing enquiry statistics
 
+### Iteration 6 (Feb 21, 2026) - Landing Page Redesign
+**UI Updates:**
+- Redesigned hero section to match user's reference design
+- Lab background image showing IVF scientists working with microscopes
+- Left-aligned content with "EMR INTEGRATED MARKETPLACE" tag
+- Headline with "AI-Powered" highlighted in coral (#E07A5F)
+- Device mockups (laptop + phone) positioned on right side showing marketplace interface
+- Phone mockup positioned in front of laptop for depth effect
+- Updated CTA buttons with shadows and hover effects
+- Fixed missing Search and ShoppingCart icon imports
+
 ## Tech Stack
 - Frontend: React + Tailwind CSS
 - Backend: FastAPI + MongoDB
