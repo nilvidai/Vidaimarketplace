@@ -131,11 +131,36 @@ class ProductResponse(BaseModel):
     image_url: Optional[str] = None
     is_active: bool = True
     is_approved: bool = False
+    commission_rate: float = 10.0  # Default 10% commission
+    commission_amount: float = 0.0
+    vendor_amount: float = 0.0
     created_at: str
 
 class ProductApproval(BaseModel):
     product_id: str
     approved: bool
+    commission_rate: float = 10.0  # Commission percentage for VIDAI
+
+class InventoryItem(BaseModel):
+    product_id: str
+    product_name: str
+    sku: str
+    category: str
+    price: float
+    stock_quantity: int
+    vendor_id: str
+    vendor_name: str
+    is_approved: bool
+    commission_rate: float
+    commission_amount: float
+    vendor_amount: float
+
+class CommissionReport(BaseModel):
+    total_products: int
+    total_product_value: float
+    total_vidai_commission: float
+    total_vendor_amount: float
+    by_vendor: List[dict]
 
 class CartItem(BaseModel):
     product_id: str
