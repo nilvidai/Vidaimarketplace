@@ -172,6 +172,15 @@ const Marketplace = () => {
               >
                 <History className="w-6 h-6 text-slate-700" />
               </button>
+
+              <button
+                onClick={fetchOrders}
+                className={`p-2 hover:bg-slate-100 rounded-lg transition-colors ${view === 'orders' ? 'bg-slate-100' : ''}`}
+                data-testid="track-orders-btn"
+                title="Track Orders"
+              >
+                <ClipboardList className="w-6 h-6 text-slate-700" />
+              </button>
               
               <button
                 onClick={() => navigate('/marketplace/cart')}
@@ -217,6 +226,13 @@ const Marketplace = () => {
           <VendorsList vendors={vendors} onSelect={selectVendor} />
         ) : view === 'purchases' ? (
           <PurchasesList purchases={purchases} onBack={goBack} />
+        ) : view === 'orders' ? (
+          <OrdersTrackingView 
+            orders={orders} 
+            onBack={goBack} 
+            selectedOrder={selectedOrder}
+            setSelectedOrder={setSelectedOrder}
+          />
         ) : (
           <ProductsList 
             products={products} 
