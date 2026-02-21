@@ -4,7 +4,7 @@ import {
   Users, Building2, Link2, LogOut, Plus, Trash2, 
   CheckCircle, XCircle, ChevronRight, Package, ShoppingBag,
   Check, X, Image as ImageIcon, BarChart3, Boxes, DollarSign,
-  ClipboardList, Truck, Eye
+  ClipboardList, Truck, Eye, MessageSquare, Settings, Mail
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -19,13 +19,18 @@ const AdminDashboard = () => {
   const [inventory, setInventory] = useState([]);
   const [commissionReport, setCommissionReport] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [enquiries, setEnquiries] = useState([]);
+  const [adminSettings, setAdminSettings] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [showClinicModal, setShowClinicModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showEnquiryModal, setShowEnquiryModal] = useState(false);
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toast, setToast] = useState(null);
