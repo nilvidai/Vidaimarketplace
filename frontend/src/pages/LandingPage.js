@@ -201,14 +201,14 @@ const LandingPage = () => {
                 Admin
               </button>
               <button
-                onClick={() => setShowVendorLogin(true)}
+                onClick={handleVendorPortalClick}
                 className="btn-secondary px-4 py-2 rounded-lg font-medium text-sm"
                 data-testid="vendor-portal-btn"
               >
                 Vendor Portal
               </button>
               <button
-                onClick={() => setShowClinicLogin(true)}
+                onClick={handleMarketplaceClick}
                 className="btn-primary px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2"
                 data-testid="explore-marketplace-btn"
               >
