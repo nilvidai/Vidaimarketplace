@@ -227,8 +227,14 @@ const AdminDashboard = () => {
             {activeTab === 'products' && (
               <ProductsApprovalTab 
                 products={pendingProducts}
-                onApprove={approveProduct}
+                onApprove={handleApproveClick}
               />
+            )}
+            {activeTab === 'inventory' && (
+              <InventoryTab inventory={inventory} vendors={vendors} />
+            )}
+            {activeTab === 'reports' && (
+              <ReportsTab report={commissionReport} />
             )}
             {activeTab === 'assignments' && (
               <AssignmentsTab 
@@ -277,6 +283,16 @@ const AdminDashboard = () => {
           fetchData();
         }}
         authHeaders={authHeaders}
+      />
+
+      <ApprovalModal 
+        isOpen={showApprovalModal}
+        onClose={() => {
+          setShowApprovalModal(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        onApprove={approveProductWithCommission}
       />
 
       {/* Toast */}
