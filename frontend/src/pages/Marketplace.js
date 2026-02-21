@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ShoppingCart, LogOut, Building2, ArrowLeft, Plus, Minus, 
   Trash2, Package, ChevronRight, Image as ImageIcon, Filter,
-  ShoppingBag, History, ClipboardList, Truck, Eye
+  ShoppingBag, History, ClipboardList, Truck, Eye, Search, Grid, List
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -12,19 +12,22 @@ import { useCart } from '../context/CartContext';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Marketplace = () => {
-  const [vendors, setVendors] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [vendors, setVendors] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedVendorFilter, setSelectedVendorFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('vendors'); // vendors, products, purchases, orders
+  const [view, setView] = useState('products'); // products, purchases, orders
   const [toast, setToast] = useState(null);
   
   const { user, logout, getToken } = useAuth();
-  const { cart, selectedVendor, setSelectedVendor, addToCart, getCartCount } = useCart();
+  const { cart, addToCart, getCartCount } = useCart();
   const navigate = useNavigate();
 
   const authHeaders = { headers: { Authorization: `Bearer ${getToken()}` } };
@@ -34,43 +37,48 @@ const Marketplace = () => {
       navigate('/');
       return;
     }
-    fetchVendors();
-    fetchCategories();
+    fetchAllProducts();
   }, [user, navigate]);
 
-  const fetchVendors = async () => {
-    try {
-      const res = await axios.get(`${API}/clinic/assigned-vendors`, authHeaders);
-      setVendors(res.data);
-    } catch (err) {
-      showToast('Failed to fetch vendors', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    filterProducts();
+  }, [allProducts, selectedCategory, selectedVendorFilter, searchQuery]);
 
-  const fetchCategories = async () => {
-    try {
-      const res = await axios.get(`${API}/clinic/categories`, authHeaders);
-      setCategories(res.data);
-    } catch (err) {
-      console.error('Failed to fetch categories:', err);
-    }
-  };
-
-  const fetchProducts = async (vendorId, category = null) => {
+  const fetchAllProducts = async () => {
     setLoading(true);
     try {
-      let url = `${API}/clinic/vendors/${vendorId}/products`;
-      if (category) url += `?category=${encodeURIComponent(category)}`;
-      const res = await axios.get(url, authHeaders);
-      setProducts(res.data);
-      setView('products');
+      const res = await axios.get(`${API}/clinic/all-products`, authHeaders);
+      setAllProducts(res.data.products || []);
+      setCategories(res.data.categories || []);
+      setVendors(res.data.vendors || []);
     } catch (err) {
       showToast('Failed to fetch products', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterProducts = () => {
+    let filtered = [...allProducts];
+    
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(p => p.category === selectedCategory);
+    }
+    
+    if (selectedVendorFilter !== 'all') {
+      filtered = filtered.filter(p => p.vendor_id === selectedVendorFilter);
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(query) || 
+        p.description?.toLowerCase().includes(query) ||
+        p.sku?.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredProducts(filtered);
   };
 
   const fetchPurchases = async () => {
