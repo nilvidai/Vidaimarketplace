@@ -1,15 +1,18 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone
-
+import bcrypt
+from jose import jwt, JWTError
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutSessionRequest
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,54 +22,635 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
+# JWT Configuration
+JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'vidai_secret_key')
+JWT_ALGORITHM = "HS256"
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'vidai@01')
+
+# Stripe Configuration
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
+
 app = FastAPI()
-
-# Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+security = HTTPBearer()
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
+# ==================== MODELS ====================
+
+class AdminLogin(BaseModel):
+    username: str
+    password: str
+
+class VendorCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    company_name: str
+    phone: Optional[str] = None
+
+class VendorLogin(BaseModel):
+    email: str
+    password: str
+
+class VendorResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    company_name: str
+    phone: Optional[str] = None
+    is_active: bool = True
+    created_at: str
+
+class ClinicCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    clinic_name: str
+    phone: Optional[str] = None
+    billing_address: str
+    shipping_address: str
+    city: str
+    state: str
+    zip_code: str
+    country: str = "USA"
+
+class ClinicLogin(BaseModel):
+    email: str
+    password: str
+
+class ClinicResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    clinic_name: str
+    phone: Optional[str] = None
+    billing_address: str
+    shipping_address: str
+    city: str
+    state: str
+    zip_code: str
+    country: str
+    is_active: bool = True
+    created_at: str
+
+class VendorAssignment(BaseModel):
+    clinic_id: str
+    vendor_ids: List[str]
+
+class ProductCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    category: str
+    sku: str
+    stock_quantity: int = 0
+    image_url: Optional[str] = None
+
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    category: Optional[str] = None
+    sku: Optional[str] = None
+    stock_quantity: Optional[int] = None
+    image_url: Optional[str] = None
+
+class ProductResponse(BaseModel):
+    id: str
+    vendor_id: str
+    name: str
+    description: str
+    price: float
+    category: str
+    sku: str
+    stock_quantity: int
+    image_url: Optional[str] = None
+    is_active: bool = True
+    created_at: str
+
+class CartItem(BaseModel):
+    product_id: str
+    quantity: int
+
+class OrderCreate(BaseModel):
+    items: List[CartItem]
+    billing_address: str
+    shipping_address: str
+    city: str
+    state: str
+    zip_code: str
+    country: str
+
+class CheckoutRequest(BaseModel):
+    order_id: str
+    origin_url: str
+
+class OrderResponse(BaseModel):
+    id: str
+    clinic_id: str
+    vendor_id: str
+    items: List[dict]
+    total_amount: float
+    billing_address: str
+    shipping_address: str
+    city: str
+    state: str
+    zip_code: str
+    country: str
+    status: str
+    payment_status: str
+    stripe_session_id: Optional[str] = None
+    created_at: str
+
+# ==================== HELPER FUNCTIONS ====================
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+def create_token(data: dict) -> str:
+    return jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def decode_token(token: str) -> dict:
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    payload = decode_token(token)
+    return payload
+
+async def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    payload = await get_current_user(credentials)
+    if payload.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return payload
+
+async def get_vendor_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    payload = await get_current_user(credentials)
+    if payload.get("role") != "vendor":
+        raise HTTPException(status_code=403, detail="Vendor access required")
+    return payload
+
+async def get_clinic_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    payload = await get_current_user(credentials)
+    if payload.get("role") != "clinic":
+        raise HTTPException(status_code=403, detail="Clinic access required")
+    return payload
+
+# ==================== ADMIN ROUTES ====================
+
+@api_router.post("/admin/login")
+async def admin_login(data: AdminLogin):
+    if data.username == "admin" and data.password == ADMIN_PASSWORD:
+        token = create_token({"role": "admin", "username": "admin"})
+        return {"token": token, "role": "admin"}
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+@api_router.post("/admin/vendors", response_model=VendorResponse)
+async def create_vendor(data: VendorCreate, admin=Depends(get_admin_user)):
+    existing = await db.vendors.find_one({"email": data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
     
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    vendor_id = str(uuid.uuid4())
+    vendor_doc = {
+        "id": vendor_id,
+        "name": data.name,
+        "email": data.email,
+        "password": hash_password(data.password),
+        "company_name": data.company_name,
+        "phone": data.phone,
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.vendors.insert_one(vendor_doc)
+    del vendor_doc["password"]
+    del vendor_doc["_id"]
+    return vendor_doc
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+@api_router.get("/admin/vendors", response_model=List[VendorResponse])
+async def get_all_vendors(admin=Depends(get_admin_user)):
+    vendors = await db.vendors.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    return vendors
 
-# Add your routes to the router instead of directly to app
+@api_router.delete("/admin/vendors/{vendor_id}")
+async def delete_vendor(vendor_id: str, admin=Depends(get_admin_user)):
+    result = await db.vendors.delete_one({"id": vendor_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    return {"message": "Vendor deleted"}
+
+@api_router.post("/admin/clinics", response_model=ClinicResponse)
+async def create_clinic(data: ClinicCreate, admin=Depends(get_admin_user)):
+    existing = await db.clinics.find_one({"email": data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    clinic_id = str(uuid.uuid4())
+    clinic_doc = {
+        "id": clinic_id,
+        "name": data.name,
+        "email": data.email,
+        "password": hash_password(data.password),
+        "clinic_name": data.clinic_name,
+        "phone": data.phone,
+        "billing_address": data.billing_address,
+        "shipping_address": data.shipping_address,
+        "city": data.city,
+        "state": data.state,
+        "zip_code": data.zip_code,
+        "country": data.country,
+        "is_active": True,
+        "assigned_vendors": [],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.clinics.insert_one(clinic_doc)
+    del clinic_doc["password"]
+    del clinic_doc["_id"]
+    del clinic_doc["assigned_vendors"]
+    return clinic_doc
+
+@api_router.get("/admin/clinics", response_model=List[ClinicResponse])
+async def get_all_clinics(admin=Depends(get_admin_user)):
+    clinics = await db.clinics.find({}, {"_id": 0, "password": 0, "assigned_vendors": 0}).to_list(1000)
+    return clinics
+
+@api_router.delete("/admin/clinics/{clinic_id}")
+async def delete_clinic(clinic_id: str, admin=Depends(get_admin_user)):
+    result = await db.clinics.delete_one({"id": clinic_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    return {"message": "Clinic deleted"}
+
+@api_router.post("/admin/assign-vendors")
+async def assign_vendors_to_clinic(data: VendorAssignment, admin=Depends(get_admin_user)):
+    clinic = await db.clinics.find_one({"id": data.clinic_id})
+    if not clinic:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    
+    # Verify all vendors exist
+    for vid in data.vendor_ids:
+        vendor = await db.vendors.find_one({"id": vid})
+        if not vendor:
+            raise HTTPException(status_code=404, detail=f"Vendor {vid} not found")
+    
+    await db.clinics.update_one(
+        {"id": data.clinic_id},
+        {"$set": {"assigned_vendors": data.vendor_ids}}
+    )
+    return {"message": "Vendors assigned successfully"}
+
+@api_router.get("/admin/clinic/{clinic_id}/assignments")
+async def get_clinic_assignments(clinic_id: str, admin=Depends(get_admin_user)):
+    clinic = await db.clinics.find_one({"id": clinic_id}, {"_id": 0})
+    if not clinic:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    return {"clinic_id": clinic_id, "assigned_vendors": clinic.get("assigned_vendors", [])}
+
+# ==================== VENDOR ROUTES ====================
+
+@api_router.post("/vendor/login")
+async def vendor_login(data: VendorLogin):
+    vendor = await db.vendors.find_one({"email": data.email})
+    if not vendor or not verify_password(data.password, vendor["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not vendor.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Account is deactivated")
+    
+    token = create_token({"role": "vendor", "vendor_id": vendor["id"], "email": vendor["email"]})
+    return {
+        "token": token, 
+        "role": "vendor", 
+        "vendor_id": vendor["id"],
+        "name": vendor["name"],
+        "company_name": vendor["company_name"]
+    }
+
+@api_router.get("/vendor/profile")
+async def get_vendor_profile(user=Depends(get_vendor_user)):
+    vendor = await db.vendors.find_one({"id": user["vendor_id"]}, {"_id": 0, "password": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    return vendor
+
+@api_router.post("/vendor/products", response_model=ProductResponse)
+async def create_product(data: ProductCreate, user=Depends(get_vendor_user)):
+    product_id = str(uuid.uuid4())
+    product_doc = {
+        "id": product_id,
+        "vendor_id": user["vendor_id"],
+        "name": data.name,
+        "description": data.description,
+        "price": data.price,
+        "category": data.category,
+        "sku": data.sku,
+        "stock_quantity": data.stock_quantity,
+        "image_url": data.image_url,
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.products.insert_one(product_doc)
+    del product_doc["_id"]
+    return product_doc
+
+@api_router.get("/vendor/products", response_model=List[ProductResponse])
+async def get_vendor_products(user=Depends(get_vendor_user)):
+    products = await db.products.find({"vendor_id": user["vendor_id"]}, {"_id": 0}).to_list(1000)
+    return products
+
+@api_router.put("/vendor/products/{product_id}", response_model=ProductResponse)
+async def update_product(product_id: str, data: ProductUpdate, user=Depends(get_vendor_user)):
+    product = await db.products.find_one({"id": product_id, "vendor_id": user["vendor_id"]})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    if update_data:
+        await db.products.update_one({"id": product_id}, {"$set": update_data})
+    
+    updated = await db.products.find_one({"id": product_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/vendor/products/{product_id}")
+async def delete_product(product_id: str, user=Depends(get_vendor_user)):
+    result = await db.products.delete_one({"id": product_id, "vendor_id": user["vendor_id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Product deleted"}
+
+@api_router.get("/vendor/orders", response_model=List[OrderResponse])
+async def get_vendor_orders(user=Depends(get_vendor_user)):
+    orders = await db.orders.find({"vendor_id": user["vendor_id"]}, {"_id": 0}).to_list(1000)
+    return orders
+
+@api_router.put("/vendor/orders/{order_id}/status")
+async def update_order_status(order_id: str, status: str, user=Depends(get_vendor_user)):
+    valid_statuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+    
+    result = await db.orders.update_one(
+        {"id": order_id, "vendor_id": user["vendor_id"]},
+        {"$set": {"status": status}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"message": "Order status updated"}
+
+# ==================== CLINIC ROUTES ====================
+
+@api_router.post("/clinic/login")
+async def clinic_login(data: ClinicLogin):
+    clinic = await db.clinics.find_one({"email": data.email})
+    if not clinic or not verify_password(data.password, clinic["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not clinic.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Account is deactivated")
+    
+    token = create_token({"role": "clinic", "clinic_id": clinic["id"], "email": clinic["email"]})
+    return {
+        "token": token,
+        "role": "clinic",
+        "clinic_id": clinic["id"],
+        "name": clinic["name"],
+        "clinic_name": clinic["clinic_name"],
+        "billing_address": clinic["billing_address"],
+        "shipping_address": clinic["shipping_address"],
+        "city": clinic["city"],
+        "state": clinic["state"],
+        "zip_code": clinic["zip_code"],
+        "country": clinic["country"]
+    }
+
+@api_router.get("/clinic/profile")
+async def get_clinic_profile(user=Depends(get_clinic_user)):
+    clinic = await db.clinics.find_one({"id": user["clinic_id"]}, {"_id": 0, "password": 0})
+    if not clinic:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    return clinic
+
+@api_router.get("/clinic/assigned-vendors")
+async def get_assigned_vendors(user=Depends(get_clinic_user)):
+    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
+    if not clinic:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    
+    assigned_ids = clinic.get("assigned_vendors", [])
+    vendors = await db.vendors.find(
+        {"id": {"$in": assigned_ids}, "is_active": True},
+        {"_id": 0, "password": 0}
+    ).to_list(1000)
+    return vendors
+
+@api_router.get("/clinic/vendors/{vendor_id}/products")
+async def get_vendor_products_for_clinic(vendor_id: str, user=Depends(get_clinic_user)):
+    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
+    if vendor_id not in clinic.get("assigned_vendors", []):
+        raise HTTPException(status_code=403, detail="Vendor not assigned to your clinic")
+    
+    products = await db.products.find(
+        {"vendor_id": vendor_id, "is_active": True},
+        {"_id": 0}
+    ).to_list(1000)
+    return products
+
+@api_router.post("/clinic/orders", response_model=OrderResponse)
+async def create_order(data: OrderCreate, user=Depends(get_clinic_user)):
+    if not data.items:
+        raise HTTPException(status_code=400, detail="Order must have at least one item")
+    
+    # Get first product to determine vendor
+    first_product = await db.products.find_one({"id": data.items[0].product_id})
+    if not first_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    vendor_id = first_product["vendor_id"]
+    
+    # Verify clinic has access to this vendor
+    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
+    if vendor_id not in clinic.get("assigned_vendors", []):
+        raise HTTPException(status_code=403, detail="Vendor not assigned to your clinic")
+    
+    # Build order items and calculate total
+    order_items = []
+    total_amount = 0.0
+    
+    for item in data.items:
+        product = await db.products.find_one({"id": item.product_id})
+        if not product:
+            raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+        if product["vendor_id"] != vendor_id:
+            raise HTTPException(status_code=400, detail="All items must be from the same vendor")
+        
+        item_total = product["price"] * item.quantity
+        order_items.append({
+            "product_id": product["id"],
+            "name": product["name"],
+            "price": product["price"],
+            "quantity": item.quantity,
+            "subtotal": item_total
+        })
+        total_amount += item_total
+    
+    order_id = str(uuid.uuid4())
+    order_doc = {
+        "id": order_id,
+        "clinic_id": user["clinic_id"],
+        "vendor_id": vendor_id,
+        "items": order_items,
+        "total_amount": round(total_amount, 2),
+        "billing_address": data.billing_address,
+        "shipping_address": data.shipping_address,
+        "city": data.city,
+        "state": data.state,
+        "zip_code": data.zip_code,
+        "country": data.country,
+        "status": "pending",
+        "payment_status": "pending",
+        "stripe_session_id": None,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.orders.insert_one(order_doc)
+    del order_doc["_id"]
+    return order_doc
+
+@api_router.get("/clinic/orders", response_model=List[OrderResponse])
+async def get_clinic_orders(user=Depends(get_clinic_user)):
+    orders = await db.orders.find({"clinic_id": user["clinic_id"]}, {"_id": 0}).to_list(1000)
+    return orders
+
+# ==================== STRIPE PAYMENT ROUTES ====================
+
+@api_router.post("/checkout/create-session")
+async def create_checkout_session(data: CheckoutRequest, request: Request, user=Depends(get_clinic_user)):
+    order = await db.orders.find_one({"id": data.order_id, "clinic_id": user["clinic_id"]})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if order["payment_status"] == "paid":
+        raise HTTPException(status_code=400, detail="Order already paid")
+    
+    host_url = data.origin_url.rstrip('/')
+    webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
+    
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    
+    success_url = f"{host_url}/marketplace/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{host_url}/marketplace/checkout?order_id={data.order_id}"
+    
+    checkout_request = CheckoutSessionRequest(
+        amount=float(order["total_amount"]),
+        currency="usd",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={
+            "order_id": data.order_id,
+            "clinic_id": user["clinic_id"]
+        }
+    )
+    
+    session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_request)
+    
+    # Create payment transaction record
+    await db.payment_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "order_id": data.order_id,
+        "clinic_id": user["clinic_id"],
+        "session_id": session.session_id,
+        "amount": order["total_amount"],
+        "currency": "usd",
+        "payment_status": "initiated",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Update order with session ID
+    await db.orders.update_one(
+        {"id": data.order_id},
+        {"$set": {"stripe_session_id": session.session_id}}
+    )
+    
+    return {"checkout_url": session.url, "session_id": session.session_id}
+
+@api_router.get("/checkout/status/{session_id}")
+async def get_checkout_status(session_id: str, request: Request, user=Depends(get_clinic_user)):
+    webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    
+    status = await stripe_checkout.get_checkout_status(session_id)
+    
+    # Update payment transaction and order if paid
+    if status.payment_status == "paid":
+        # Check if already processed
+        transaction = await db.payment_transactions.find_one({"session_id": session_id})
+        if transaction and transaction.get("payment_status") != "paid":
+            await db.payment_transactions.update_one(
+                {"session_id": session_id},
+                {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            
+            order = await db.orders.find_one({"stripe_session_id": session_id})
+            if order:
+                await db.orders.update_one(
+                    {"id": order["id"]},
+                    {"$set": {"payment_status": "paid", "status": "confirmed"}}
+                )
+    
+    return {
+        "status": status.status,
+        "payment_status": status.payment_status,
+        "amount_total": status.amount_total,
+        "currency": status.currency
+    }
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    body = await request.body()
+    signature = request.headers.get("Stripe-Signature", "")
+    
+    webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    
+    try:
+        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        
+        if webhook_response.payment_status == "paid":
+            session_id = webhook_response.session_id
+            order_id = webhook_response.metadata.get("order_id")
+            
+            if order_id:
+                await db.orders.update_one(
+                    {"id": order_id},
+                    {"$set": {"payment_status": "paid", "status": "confirmed"}}
+                )
+                await db.payment_transactions.update_one(
+                    {"session_id": session_id},
+                    {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
+                )
+        
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return {"status": "error", "message": str(e)}
+
+# ==================== PUBLIC ROUTES ====================
+
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "VIDAI IVF Marketplace API"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
+@api_router.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
-
-# Include the router in the main app
+# Include router
 app.include_router(api_router)
 
 app.add_middleware(
@@ -76,13 +660,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
