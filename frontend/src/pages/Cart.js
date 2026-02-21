@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, Minus, Trash2, ShoppingBag, 
-  Image as ImageIcon, ArrowRight
+  Image as ImageIcon, ArrowRight, Home
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
