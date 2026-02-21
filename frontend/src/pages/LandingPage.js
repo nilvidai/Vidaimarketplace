@@ -426,15 +426,21 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="hero-blob -top-20 -right-40 opacity-50"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="relative z-10">
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src="https://images.pexels.com/photos/3825527/pexels-photo-3825527.jpeg?auto=compress&cs=tinysrgb&w=1920"
+            alt="Laboratory background"
+            className="w-full h-full object-cover opacity-20"
+          />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
               <span className="text-[#E07A5F] font-semibold text-sm tracking-wide uppercase">
                 EMR Integrated Marketplace
               </span>
-              <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mt-4 leading-tight" style={{ fontFamily: 'Manrope' }}>
+              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mt-4 leading-tight" style={{ fontFamily: 'Manrope' }}>
                 VIDAI Revolutionizing Healthcare with{' '}
                 <span className="text-[#E07A5F]">AI-Powered</span> IVF Marketplace
               </h1>
@@ -443,24 +449,8 @@ const LandingPage = () => {
                 equipment, and genetic testing kits with complete traceability and compliance.
               </p>
 
-              {/* Stats */}
-              <div className="flex gap-12 mt-10">
-                <div>
-                  <div className="stat-number text-4xl text-slate-900">150+</div>
-                  <div className="text-[#E07A5F] font-medium text-sm mt-1">Trusted Vendors</div>
-                </div>
-                <div>
-                  <div className="stat-number text-4xl text-slate-900">500+</div>
-                  <div className="text-[#E07A5F] font-medium text-sm mt-1">IVF Clinics</div>
-                </div>
-                <div>
-                  <div className="stat-number text-4xl text-slate-900">1.2M</div>
-                  <div className="text-[#E07A5F] font-medium text-sm mt-1">Orders Fulfilled</div>
-                </div>
-              </div>
-
               {/* CTA Buttons */}
-              <div className="flex gap-4 mt-10">
+              <div className="flex gap-4 mt-8">
                 <button
                   onClick={handleMarketplaceClick}
                   className="btn-primary px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
@@ -479,20 +469,99 @@ const LandingPage = () => {
               </div>
             </div>
 
-            <div className="relative">
-              <img
-                src="https://images.pexels.com/photos/8326315/pexels-photo-8326315.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
-                alt="Scientist in modern IVF laboratory"
-                className="rounded-2xl shadow-2xl w-full object-cover"
-                style={{ maxHeight: '500px' }}
-              />
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-lg p-4 flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#2A9D8F]/10 rounded-full flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-[#2A9D8F]" />
+            {/* Device Mockups */}
+            <div className="relative flex justify-center items-end">
+              {/* Laptop Mockup */}
+              <div className="relative z-10">
+                <div className="bg-slate-800 rounded-t-xl p-2 w-[500px]">
+                  <div className="flex gap-1.5 mb-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  </div>
+                  <div className="bg-white rounded-lg overflow-hidden">
+                    <div className="bg-slate-100 p-2 flex items-center gap-2 border-b">
+                      <div className="w-6 h-6 bg-[#E07A5F] rounded flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">V</span>
+                      </div>
+                      <span className="text-xs font-medium text-slate-700">Marketplace</span>
+                      <div className="flex-1"></div>
+                      <div className="flex gap-2">
+                        <div className="w-4 h-4 bg-slate-300 rounded"></div>
+                        <div className="w-4 h-4 bg-slate-300 rounded"></div>
+                      </div>
+                    </div>
+                    <div className="p-3 h-[280px] overflow-hidden">
+                      <div className="text-xs font-semibold text-slate-800 mb-2">Equipment</div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
+                          <div className="text-[8px] font-medium text-slate-700">IVF Incubator</div>
+                          <div className="text-[8px] text-[#E07A5F]">$12,500</div>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
+                          <div className="text-[8px] font-medium text-slate-700">Microscope</div>
+                          <div className="text-[8px] text-[#E07A5F]">$8,900</div>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
+                          <div className="text-[8px] font-medium text-slate-700">Centrifuge</div>
+                          <div className="text-[8px] text-[#E07A5F]">$3,200</div>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
+                          <div className="text-[8px] font-medium text-slate-700">Culture Media</div>
+                          <div className="text-[8px] text-[#E07A5F]">$299</div>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
+                          <div className="text-[8px] font-medium text-slate-700">Consumables</div>
+                          <div className="text-[8px] text-[#E07A5F]">$149</div>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
+                          <div className="text-[8px] font-medium text-slate-700">Test Kits</div>
+                          <div className="text-[8px] text-[#E07A5F]">$450</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-slate-900">FDA Certified</div>
-                  <div className="text-sm text-slate-500">All products verified</div>
+                <div className="bg-slate-700 h-4 rounded-b-lg"></div>
+                <div className="bg-slate-600 h-2 mx-16 rounded-b-lg"></div>
+              </div>
+
+              {/* Phone Mockup */}
+              <div className="absolute -right-4 bottom-0 z-20">
+                <div className="bg-slate-900 rounded-[24px] p-2 w-[140px] shadow-2xl">
+                  <div className="bg-white rounded-[16px] overflow-hidden">
+                    <div className="bg-slate-100 p-1.5 flex items-center gap-1 border-b">
+                      <div className="w-4 h-4 bg-[#E07A5F] rounded flex items-center justify-center">
+                        <span className="text-white text-[6px] font-bold">V</span>
+                      </div>
+                      <span className="text-[7px] font-medium text-slate-700">Marketplace</span>
+                    </div>
+                    <div className="p-2 h-[200px]">
+                      <div className="text-[7px] font-semibold text-slate-800 mb-1">Categories</div>
+                      <div className="space-y-1">
+                        <div className="bg-[#E07A5F] text-white text-[6px] px-2 py-1 rounded">Equipment</div>
+                        <div className="bg-slate-100 text-slate-700 text-[6px] px-2 py-1 rounded">Consumables</div>
+                        <div className="bg-slate-100 text-slate-700 text-[6px] px-2 py-1 rounded">Test Kits</div>
+                        <div className="bg-slate-100 text-slate-700 text-[6px] px-2 py-1 rounded">Culture Media</div>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-1">
+                        <div className="bg-slate-50 rounded p-1">
+                          <div className="w-full aspect-square bg-slate-200 rounded mb-0.5"></div>
+                          <div className="text-[5px] font-medium">Incubator</div>
+                        </div>
+                        <div className="bg-slate-50 rounded p-1">
+                          <div className="w-full aspect-square bg-slate-200 rounded mb-0.5"></div>
+                          <div className="text-[5px] font-medium">Microscope</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
