@@ -113,6 +113,210 @@ export const LoginModal = ({ isOpen, onClose, type, onSuccess }) => {
   );
 };
 
+const ContactSalesModal = ({ isOpen, onClose }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    company: '',
+    phone: '',
+    message: '',
+    enquiry_type: 'general'
+  });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      await axios.post(`${API}/contact`, formData);
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+        setSuccess(false);
+        setFormData({
+          name: '',
+          email: '',
+          company: '',
+          phone: '',
+          message: '',
+          enquiry_type: 'general'
+        });
+      }, 2000);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to submit. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const enquiryTypes = [
+    { value: 'general', label: 'General Inquiry' },
+    { value: 'demo', label: 'Request a Demo' },
+    { value: 'pricing', label: 'Pricing Information' },
+    { value: 'partnership', label: 'Partnership Opportunity' }
+  ];
+
+  return (
+    <div className="modal-backdrop modal-overlay" onClick={onClose}>
+      <div className="modal-box modal-content max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="modal-header flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Contact Sales</h2>
+            <p className="text-slate-500 text-sm mt-1">
+              Get in touch with our team
+            </p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            data-testid="contact-modal-close"
+          >
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+        
+        {success ? (
+          <div className="modal-body text-center py-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Send className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">Thank You!</h3>
+            <p className="text-slate-500">We've received your enquiry and will get back to you soon.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="modal-body">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="form-group">
+              <label className="form-label">Enquiry Type</label>
+              <select
+                value={formData.enquiry_type}
+                onChange={(e) => setFormData({...formData, enquiry_type: e.target.value})}
+                className="form-input"
+                data-testid="contact-type-select"
+              >
+                {enquiryTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="form-label">Full Name *</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="form-input pl-10"
+                    placeholder="John Doe"
+                    required
+                    data-testid="contact-name-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Email *</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="form-input pl-10"
+                    placeholder="john@company.com"
+                    required
+                    data-testid="contact-email-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="form-label">Company</label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={formData.company}
+                    onChange={(e) => setFormData({...formData, company: e.target.value})}
+                    className="form-input pl-10"
+                    placeholder="Acme Inc."
+                    data-testid="contact-company-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Phone</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="form-input pl-10"
+                    placeholder="+1 (555) 123-4567"
+                    data-testid="contact-phone-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Message *</label>
+              <div className="relative">
+                <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                <textarea
+                  value={formData.message}
+                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                  className="form-input pl-10 min-h-[100px]"
+                  placeholder="Tell us about your needs..."
+                  required
+                  data-testid="contact-message-input"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full btn-primary py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
+              data-testid="contact-submit-btn"
+            >
+              {loading ? (
+                <>
+                  <div className="spinner"></div>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Send Message
+                </>
+              )}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const LandingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
