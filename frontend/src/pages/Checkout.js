@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, MapPin, CreditCard, Check, 
-  Image as ImageIcon, AlertCircle
+  Image as ImageIcon, AlertCircle, Home
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
