@@ -639,6 +639,54 @@ async def get_vendor_orders(user=Depends(get_vendor_user)):
     orders = await db.orders.find({"vendor_id": user["vendor_id"]}, {"_id": 0}).to_list(1000)
     return orders
 
+@api_router.get("/vendor/inventory")
+async def get_vendor_inventory(user=Depends(get_vendor_user)):
+    """Get inventory for vendor's own products with commission details"""
+    products = await db.products.find({"vendor_id": user["vendor_id"]}, {"_id": 0}).to_list(1000)
+    
+    inventory = []
+    total_stock_value = 0
+    total_commission = 0
+    total_vendor_earnings = 0
+    
+    for product in products:
+        price = product["price"]
+        stock = product["stock_quantity"]
+        commission_rate = product.get("commission_rate", 10.0)
+        commission_amount = product.get("commission_amount", round(price * 0.1, 2))
+        vendor_amount = product.get("vendor_amount", round(price * 0.9, 2))
+        
+        stock_value = price * stock
+        total_stock_value += stock_value
+        total_commission += commission_amount * stock
+        total_vendor_earnings += vendor_amount * stock
+        
+        inventory.append({
+            "product_id": product["id"],
+            "product_name": product["name"],
+            "sku": product["sku"],
+            "category": product["category"],
+            "price": price,
+            "stock_quantity": stock,
+            "stock_value": round(stock_value, 2),
+            "is_approved": product.get("is_approved", False),
+            "commission_rate": commission_rate,
+            "commission_amount": commission_amount,
+            "vendor_amount": vendor_amount,
+            "potential_earnings": round(vendor_amount * stock, 2)
+        })
+    
+    return {
+        "items": inventory,
+        "summary": {
+            "total_products": len(products),
+            "total_stock_units": sum(p["stock_quantity"] for p in products),
+            "total_stock_value": round(total_stock_value, 2),
+            "total_vidai_commission": round(total_commission, 2),
+            "total_vendor_earnings": round(total_vendor_earnings, 2)
+        }
+    }
+
 @api_router.put("/vendor/orders/{order_id}/status")
 async def update_order_status(order_id: str, status: str, user=Depends(get_vendor_user)):
     valid_statuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]
