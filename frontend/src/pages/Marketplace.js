@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, LogOut, Plus, Minus, 
   Package, Image as ImageIcon, Search,
-  History, ClipboardList, Truck, Eye, ArrowLeft
+  History, ClipboardList, Truck, Eye, ArrowLeft, Home
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
