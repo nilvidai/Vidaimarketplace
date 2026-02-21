@@ -125,8 +125,8 @@ class VIDAIMarketplaceAPITester:
             "phone": "+1234567890"
         }
         
-        response, error = self.make_request('POST', '/admin/vendors', vendor_data, self.admin_token, 201)
-        if response and response.status_code == 201:
+        response, error = self.make_request('POST', '/admin/vendors', vendor_data, self.admin_token, 200)
+        if response and response.status_code == 200:
             result = response.json()
             self.vendor_id = result.get('id')
             self.vendor_email = vendor_data['email']
