@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Package, ShoppingBag, Home } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
