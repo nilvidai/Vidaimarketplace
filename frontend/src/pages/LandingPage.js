@@ -347,7 +347,11 @@ const LandingPage = () => {
             >
               Start Shopping
             </button>
-            <button className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors">
+            <button 
+              onClick={() => setShowContactModal(true)}
+              className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
+              data-testid="contact-sales-btn"
+            >
               Contact Sales
             </button>
           </div>
@@ -385,6 +389,10 @@ const LandingPage = () => {
         onClose={() => setShowClinicLogin(false)}
         type="clinic"
         onSuccess={handleClinicLoginSuccess}
+      />
+      <ContactSalesModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
       />
     </div>
   );
