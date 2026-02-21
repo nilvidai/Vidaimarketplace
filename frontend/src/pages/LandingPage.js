@@ -430,9 +430,9 @@ const LandingPage = () => {
         {/* Lab Background Image - Two scientists with microscope in IVF lab */}
         <div className="absolute inset-0">
           <img
-            src="https://images.pexels.com/photos/9243720/pexels-photo-9243720.jpeg?auto=compress&cs=tinysrgb&w=1920"
+            src="https://customer-assets.emergentagent.com/job_fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/artifacts/dvi6h3ze_WhatsApp%20Image%202026-02-21%20at%2017.50.17.jpeg"
             alt="Two scientists examining samples in IVF laboratory"
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-right"
           />
           {/* Gradient Overlay for text readability */}
           <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/40"></div>
