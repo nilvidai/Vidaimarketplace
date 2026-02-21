@@ -10,6 +10,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMarketplace from "./pages/AdminMarketplace";
 import VendorDashboard from "./pages/VendorDashboard";
+import ClinicDashboard from "./pages/ClinicDashboard";
 import Marketplace from "./pages/Marketplace";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
