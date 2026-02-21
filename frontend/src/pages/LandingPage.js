@@ -115,6 +115,7 @@ export const LoginModal = ({ isOpen, onClose, type, onSuccess }) => {
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showVendorLogin, setShowVendorLogin] = useState(false);
   const [showClinicLogin, setShowClinicLogin] = useState(false);
 
@@ -150,6 +151,24 @@ const LandingPage = () => {
       description: 'Complete lot tracking from vendor to patient cycle for full accountability'
     }
   ];
+
+  const handleVendorPortalClick = () => {
+    // If already logged in as vendor, go directly to dashboard
+    if (user && user.role === 'vendor') {
+      navigate('/vendor/dashboard');
+    } else {
+      setShowVendorLogin(true);
+    }
+  };
+
+  const handleMarketplaceClick = () => {
+    // If already logged in as clinic, go directly to marketplace
+    if (user && user.role === 'clinic') {
+      navigate('/marketplace');
+    } else {
+      setShowClinicLogin(true);
+    }
+  };
 
   const handleVendorLoginSuccess = (data) => {
     navigate('/vendor/dashboard');
