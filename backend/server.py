@@ -367,16 +367,163 @@ async def get_pending_products(admin=Depends(get_admin_user)):
 
 @api_router.post("/admin/products/approve")
 async def approve_product(data: ProductApproval, admin=Depends(get_admin_user)):
-    """Approve or reject a product"""
+    """Approve or reject a product with commission calculation"""
     product = await db.products.find_one({"id": data.product_id})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
+    update_data = {"is_approved": data.approved}
+    
+    if data.approved:
+        # Calculate commission when approving
+        price = product["price"]
+        commission_rate = data.commission_rate
+        commission_amount = round(price * (commission_rate / 100), 2)
+        vendor_amount = round(price - commission_amount, 2)
+        
+        update_data.update({
+            "commission_rate": commission_rate,
+            "commission_amount": commission_amount,
+            "vendor_amount": vendor_amount
+        })
+    
     await db.products.update_one(
         {"id": data.product_id},
-        {"$set": {"is_approved": data.approved}}
+        {"$set": update_data}
     )
-    return {"message": f"Product {'approved' if data.approved else 'rejected'} successfully"}
+    return {
+        "message": f"Product {'approved' if data.approved else 'rejected'} successfully",
+        "commission_rate": data.commission_rate if data.approved else 0,
+        "commission_amount": update_data.get("commission_amount", 0),
+        "vendor_amount": update_data.get("vendor_amount", 0)
+    }
+
+@api_router.get("/admin/inventory")
+async def get_admin_inventory(admin=Depends(get_admin_user), vendor_id: Optional[str] = None):
+    """Get inventory for all products or filtered by vendor"""
+    query = {}
+    if vendor_id:
+        query["vendor_id"] = vendor_id
+    
+    products = await db.products.find(query, {"_id": 0}).to_list(1000)
+    inventory = []
+    
+    for product in products:
+        vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "company_name": 1})
+        inventory.append({
+            "product_id": product["id"],
+            "product_name": product["name"],
+            "sku": product["sku"],
+            "category": product["category"],
+            "price": product["price"],
+            "stock_quantity": product["stock_quantity"],
+            "vendor_id": product["vendor_id"],
+            "vendor_name": vendor["company_name"] if vendor else "Unknown",
+            "is_approved": product.get("is_approved", False),
+            "commission_rate": product.get("commission_rate", 10.0),
+            "commission_amount": product.get("commission_amount", 0),
+            "vendor_amount": product.get("vendor_amount", 0)
+        })
+    
+    return inventory
+
+@api_router.get("/admin/reports/commissions")
+async def get_commission_report(admin=Depends(get_admin_user)):
+    """Get commission report for all approved products"""
+    products = await db.products.find({"is_approved": True}, {"_id": 0}).to_list(1000)
+    
+    # Group by vendor
+    vendor_data = {}
+    total_product_value = 0
+    total_vidai_commission = 0
+    total_vendor_amount = 0
+    
+    for product in products:
+        vendor_id = product["vendor_id"]
+        price = product["price"]
+        commission_rate = product.get("commission_rate", 10.0)
+        commission_amount = product.get("commission_amount", round(price * 0.1, 2))
+        vendor_amount = product.get("vendor_amount", round(price * 0.9, 2))
+        stock = product["stock_quantity"]
+        
+        # Total values (price * stock for potential sales value)
+        product_total = price * stock
+        commission_total = commission_amount * stock
+        vendor_total = vendor_amount * stock
+        
+        total_product_value += product_total
+        total_vidai_commission += commission_total
+        total_vendor_amount += vendor_total
+        
+        if vendor_id not in vendor_data:
+            vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "company_name": 1})
+            vendor_data[vendor_id] = {
+                "vendor_id": vendor_id,
+                "vendor_name": vendor["company_name"] if vendor else "Unknown",
+                "product_count": 0,
+                "total_stock": 0,
+                "total_value": 0,
+                "vidai_commission": 0,
+                "vendor_amount": 0
+            }
+        
+        vendor_data[vendor_id]["product_count"] += 1
+        vendor_data[vendor_id]["total_stock"] += stock
+        vendor_data[vendor_id]["total_value"] += product_total
+        vendor_data[vendor_id]["vidai_commission"] += commission_total
+        vendor_data[vendor_id]["vendor_amount"] += vendor_total
+    
+    return {
+        "total_products": len(products),
+        "total_product_value": round(total_product_value, 2),
+        "total_vidai_commission": round(total_vidai_commission, 2),
+        "total_vendor_amount": round(total_vendor_amount, 2),
+        "by_vendor": list(vendor_data.values())
+    }
+
+@api_router.get("/admin/reports/sales")
+async def get_sales_report(admin=Depends(get_admin_user)):
+    """Get sales report from paid orders"""
+    orders = await db.orders.find({"payment_status": "paid"}, {"_id": 0}).to_list(1000)
+    
+    total_sales = 0
+    total_commission = 0
+    vendor_sales = {}
+    
+    for order in orders:
+        order_total = order["total_amount"]
+        vendor_id = order["vendor_id"]
+        
+        # Estimate commission at 10% (or could look up from products)
+        commission = round(order_total * 0.1, 2)
+        vendor_amount = round(order_total * 0.9, 2)
+        
+        total_sales += order_total
+        total_commission += commission
+        
+        if vendor_id not in vendor_sales:
+            vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "company_name": 1})
+            vendor_sales[vendor_id] = {
+                "vendor_id": vendor_id,
+                "vendor_name": vendor["company_name"] if vendor else "Unknown",
+                "order_count": 0,
+                "total_sales": 0,
+                "vidai_commission": 0,
+                "vendor_earnings": 0
+            }
+        
+        vendor_sales[vendor_id]["order_count"] += 1
+        vendor_sales[vendor_id]["total_sales"] += order_total
+        vendor_sales[vendor_id]["vidai_commission"] += commission
+        vendor_sales[vendor_id]["vendor_earnings"] += vendor_amount
+    
+    return {
+        "total_orders": len(orders),
+        "total_sales": round(total_sales, 2),
+        "total_vidai_commission": round(total_commission, 2),
+        "total_vendor_earnings": round(total_sales - total_commission, 2),
+        "by_vendor": list(vendor_sales.values())
+    }
 
 @api_router.get("/admin/marketplace/vendors")
 async def get_all_vendors_marketplace(admin=Depends(get_admin_user)):
