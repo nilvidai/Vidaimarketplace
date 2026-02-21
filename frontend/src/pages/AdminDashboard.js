@@ -451,7 +451,7 @@ const ProductsApprovalTab = ({ products, onApprove }) => (
       <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
         Product Approvals
       </h1>
-      <p className="text-slate-500 mt-1">Review and approve vendor products</p>
+      <p className="text-slate-500 mt-1">Review and approve vendor products with commission</p>
     </div>
 
     {products.length === 0 ? (
@@ -484,20 +484,205 @@ const ProductsApprovalTab = ({ products, onApprove }) => (
                 <span className="price-tag text-lg">${product.price?.toFixed(2)}</span>
                 <span className="text-xs text-slate-500">SKU: {product.sku}</span>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onApprove(product.id, true)}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors"
-                  data-testid={`approve-product-${product.id}`}
-                >
-                  <Check className="w-4 h-4" />
-                  Approve
-                </button>
-                <button
-                  onClick={() => onApprove(product.id, false)}
-                  className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors"
-                  data-testid={`reject-product-${product.id}`}
-                >
+              <button
+                onClick={() => onApprove(product)}
+                className="w-full bg-[#E07A5F] hover:bg-[#D0694E] text-white py-2 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors"
+                data-testid={`review-product-${product.id}`}
+              >
+                <DollarSign className="w-4 h-4" />
+                Review & Set Commission
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+const InventoryTab = ({ inventory, vendors }) => {
+  const [filterVendor, setFilterVendor] = useState('');
+  
+  const filteredInventory = filterVendor 
+    ? inventory.filter(item => item.vendor_id === filterVendor)
+    : inventory;
+
+  const totalStock = filteredInventory.reduce((sum, item) => sum + item.stock_quantity, 0);
+  const totalValue = filteredInventory.reduce((sum, item) => sum + (item.price * item.stock_quantity), 0);
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            Inventory Management
+          </h1>
+          <p className="text-slate-500 mt-1">View all products and stock levels</p>
+        </div>
+        <select
+          value={filterVendor}
+          onChange={(e) => setFilterVendor(e.target.value)}
+          className="form-input py-2 px-3"
+          data-testid="inventory-vendor-filter"
+        >
+          <option value="">All Vendors</option>
+          {vendors.map(v => (
+            <option key={v.id} value={v.id}>{v.company_name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Products</div>
+          <div className="text-3xl font-bold text-slate-900">{filteredInventory.length}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Stock Units</div>
+          <div className="text-3xl font-bold text-slate-900">{totalStock}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Stock Value</div>
+          <div className="text-3xl font-bold text-[#E07A5F]">${totalValue.toFixed(2)}</div>
+        </div>
+      </div>
+
+      {/* Inventory Table */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>SKU</th>
+              <th>Vendor</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Commission</th>
+              <th>Vendor Gets</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredInventory.length === 0 ? (
+              <tr>
+                <td colSpan="8" className="text-center py-12 text-slate-500">
+                  No inventory data
+                </td>
+              </tr>
+            ) : (
+              filteredInventory.map(item => (
+                <tr key={item.product_id} className="table-row-hover">
+                  <td className="font-medium text-slate-900">{item.product_name}</td>
+                  <td className="text-slate-500">{item.sku}</td>
+                  <td className="text-slate-500">{item.vendor_name}</td>
+                  <td className="price-tag">${item.price?.toFixed(2)}</td>
+                  <td>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      item.stock_quantity > 10 ? 'badge-success' : 
+                      item.stock_quantity > 0 ? 'badge-warning' : 'badge-error'
+                    }`}>
+                      {item.stock_quantity} units
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      item.is_approved ? 'badge-success' : 'badge-warning'
+                    }`}>
+                      {item.is_approved ? 'Approved' : 'Pending'}
+                    </span>
+                  </td>
+                  <td className="text-slate-500">{item.commission_rate}%</td>
+                  <td className="text-green-600 font-medium">${item.vendor_amount?.toFixed(2)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const ReportsTab = ({ report }) => {
+  if (!report) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+          Commission Reports
+        </h1>
+        <p className="text-slate-500 mt-1">VIDAI earnings and vendor payouts</p>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Products</div>
+          <div className="text-3xl font-bold text-slate-900">{report.total_products}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Total Product Value</div>
+          <div className="text-3xl font-bold text-slate-900">${report.total_product_value?.toFixed(2)}</div>
+        </div>
+        <div className="bg-gradient-to-br from-[#E07A5F] to-[#D0694E] rounded-xl p-6 text-white">
+          <div className="text-sm opacity-90 mb-1">VIDAI Commission</div>
+          <div className="text-3xl font-bold">${report.total_vidai_commission?.toFixed(2)}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="text-sm text-slate-500 mb-1">Vendor Earnings</div>
+          <div className="text-3xl font-bold text-green-600">${report.total_vendor_amount?.toFixed(2)}</div>
+        </div>
+      </div>
+
+      {/* By Vendor Breakdown */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100">
+          <h2 className="font-semibold text-slate-900">Commission by Vendor</h2>
+        </div>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Vendor</th>
+              <th>Products</th>
+              <th>Total Stock</th>
+              <th>Stock Value</th>
+              <th>VIDAI Commission</th>
+              <th>Vendor Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.by_vendor?.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="text-center py-12 text-slate-500">
+                  No commission data yet
+                </td>
+              </tr>
+            ) : (
+              report.by_vendor?.map(vendor => (
+                <tr key={vendor.vendor_id} className="table-row-hover">
+                  <td className="font-medium text-slate-900">{vendor.vendor_name}</td>
+                  <td>{vendor.product_count}</td>
+                  <td>{vendor.total_stock} units</td>
+                  <td>${vendor.total_value?.toFixed(2)}</td>
+                  <td className="text-[#E07A5F] font-medium">${vendor.vidai_commission?.toFixed(2)}</td>
+                  <td className="text-green-600 font-medium">${vendor.vendor_amount?.toFixed(2)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
                   <X className="w-4 h-4" />
                   Reject
                 </button>
