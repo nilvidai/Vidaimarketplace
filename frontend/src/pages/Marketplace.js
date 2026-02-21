@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
-  ShoppingCart, LogOut, Building2, ArrowLeft, Plus, Minus, 
-  Trash2, Package, ChevronRight, Image as ImageIcon, Filter,
-  ShoppingBag, History, ClipboardList, Truck, Eye, Search, Grid, List
+  ShoppingCart, LogOut, Plus, Minus, 
+  Package, Image as ImageIcon, Search,
+  History, ClipboardList, Truck, Eye, ArrowLeft, ChevronRight
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -23,11 +23,11 @@ const Marketplace = () => {
   const [selectedVendorFilter, setSelectedVendorFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('products'); // products, purchases, orders
+  const [view, setView] = useState('products');
   const [toast, setToast] = useState(null);
   
   const { user, logout, getToken } = useAuth();
-  const { cart, addToCart, getCartCount } = useCart();
+  const { addToCart, getCartCount } = useCart();
   const navigate = useNavigate();
 
   const authHeaders = { headers: { Authorization: `Bearer ${getToken()}` } };
@@ -138,70 +138,6 @@ const Marketplace = () => {
     };
     return icons[category] || '📦';
   };
-      setView('purchases');
-    } catch (err) {
-      showToast('Failed to fetch purchases', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API}/clinic/orders`, authHeaders);
-      setOrders(res.data);
-      setView('orders');
-    } catch (err) {
-      showToast('Failed to fetch orders', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  const selectVendor = (vendor) => {
-    if (selectedVendor && selectedVendor.id !== vendor.id && cart.length > 0) {
-      if (!window.confirm('Selecting a different vendor will clear your cart. Continue?')) {
-        return;
-      }
-    }
-    setSelectedVendor(vendor);
-    setSelectedCategory('');
-    fetchProducts(vendor.id);
-  };
-
-  const handleCategoryFilter = (category) => {
-    setSelectedCategory(category);
-    if (selectedVendor) {
-      fetchProducts(selectedVendor.id, category || null);
-    }
-  };
-
-  const handleAddToCart = (product) => {
-    addToCart(product);
-    showToast(`${product.name} added to cart`);
-  };
-
-  const goBack = () => {
-    if (view === 'purchases' || view === 'orders') {
-      setView('vendors');
-      setSelectedOrder(null);
-    } else {
-      setView('vendors');
-      setProducts([]);
-      setSelectedCategory('');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -223,6 +159,15 @@ const Marketplace = () => {
                 <div className="text-sm font-medium text-slate-900">{user?.clinic_name}</div>
                 <div className="text-xs text-slate-500">{user?.name}</div>
               </div>
+
+              <button
+                onClick={() => setView('products')}
+                className={`p-2 hover:bg-slate-100 rounded-lg transition-colors ${view === 'products' ? 'bg-slate-100' : ''}`}
+                data-testid="products-btn"
+                title="Browse Products"
+              >
+                <Package className="w-6 h-6 text-slate-700" />
+              </button>
 
               <button
                 onClick={fetchPurchases}
@@ -256,15 +201,6 @@ const Marketplace = () => {
               </button>
 
               <button
-                onClick={() => navigate('/marketplace/orders')}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                data-testid="orders-btn"
-                title="Order History"
-              >
-                <Package className="w-6 h-6 text-slate-700" />
-              </button>
-
-              <button
                 onClick={handleLogout}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                 data-testid="marketplace-logout-btn"
@@ -277,34 +213,135 @@ const Marketplace = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="spinner"></div>
-          </div>
-        ) : view === 'vendors' ? (
-          <VendorsList vendors={vendors} onSelect={selectVendor} />
-        ) : view === 'purchases' ? (
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="spinner"></div>
+        </div>
+      ) : view === 'purchases' ? (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <PurchasesList purchases={purchases} onBack={goBack} />
-        ) : view === 'orders' ? (
+        </main>
+      ) : view === 'orders' ? (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <OrdersTrackingView 
             orders={orders} 
             onBack={goBack} 
             selectedOrder={selectedOrder}
             setSelectedOrder={setSelectedOrder}
           />
-        ) : (
-          <ProductsList 
-            products={products} 
-            vendor={selectedVendor}
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onCategoryChange={handleCategoryFilter}
-            onBack={goBack}
-            onAddToCart={handleAddToCart}
-          />
-        )}
-      </main>
+        </main>
+      ) : (
+        <div className="flex">
+          {/* Category Sidebar */}
+          <aside className="w-64 bg-white border-r border-slate-200 min-h-[calc(100vh-64px)] p-4 sticky top-16">
+            <h2 className="font-semibold text-slate-900 mb-4">Categories</h2>
+            <nav className="space-y-1">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                  selectedCategory === 'all' 
+                    ? 'bg-[#E07A5F] text-white' 
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+                data-testid="category-all"
+              >
+                <span>📋</span>
+                <span className="font-medium">All Products</span>
+                <span className="ml-auto text-xs opacity-70">{allProducts.length}</span>
+              </button>
+              
+              {categories.map(category => {
+                const count = allProducts.filter(p => p.category === category).length;
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                      selectedCategory === category 
+                        ? 'bg-[#E07A5F] text-white' 
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                    data-testid={`category-${category}`}
+                  >
+                    <span>{getCategoryIcon(category)}</span>
+                    <span className="font-medium">{category}</span>
+                    <span className="ml-auto text-xs opacity-70">{count}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Vendor Filter */}
+            {vendors.length > 0 && (
+              <div className="mt-8">
+                <h2 className="font-semibold text-slate-900 mb-4">Filter by Vendor</h2>
+                <select
+                  value={selectedVendorFilter}
+                  onChange={(e) => setSelectedVendorFilter(e.target.value)}
+                  className="w-full form-input text-sm"
+                  data-testid="vendor-filter"
+                >
+                  <option value="all">All Vendors</option>
+                  {vendors.map(vendor => (
+                    <option key={vendor.id} value={vendor.id}>{vendor.company_name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </aside>
+
+          {/* Product Grid */}
+          <main className="flex-1 p-6">
+            {/* Search Bar */}
+            <div className="mb-6">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products..."
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:border-[#E07A5F] focus:ring-1 focus:ring-[#E07A5F]"
+                  data-testid="product-search"
+                />
+              </div>
+            </div>
+
+            {/* Results Header */}
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+                  {selectedCategory === 'all' ? 'All Products' : selectedCategory}
+                </h1>
+                <p className="text-slate-500 mt-1">
+                  {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+                </p>
+              </div>
+            </div>
+
+            {/* Product Grid */}
+            {filteredProducts.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Package className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No products found</h3>
+                <p className="text-slate-500">Try adjusting your filters or search query</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProducts.map(product => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    onAddToCart={handleAddToCart}
+                  />
+                ))}
+              </div>
+            )}
+          </main>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (
@@ -316,193 +353,132 @@ const Marketplace = () => {
   );
 };
 
-const VendorsList = ({ vendors, onSelect }) => (
-  <div>
-    <div className="mb-8">
-      <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
-        Your Assigned Vendors
-      </h1>
-      <p className="text-slate-500 mt-1">Select a vendor to browse their products</p>
-    </div>
-
-    {vendors.length === 0 ? (
-      <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
-        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Building2 className="w-8 h-8 text-slate-400" />
-        </div>
-        <h3 className="text-lg font-semibold text-slate-900 mb-2">No vendors assigned</h3>
-        <p className="text-slate-500">Contact your administrator to assign vendors to your clinic</p>
-      </div>
-    ) : (
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {vendors.map(vendor => (
-          <div
-            key={vendor.id}
-            onClick={() => onSelect(vendor)}
-            className="vendor-card"
-            data-testid={`vendor-card-${vendor.id}`}
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-slate-100 to-slate-50 rounded-xl flex items-center justify-center">
-                <Building2 className="w-7 h-7 text-[#E07A5F]" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900 text-lg">{vendor.company_name}</h3>
-                <p className="text-sm text-slate-500 mt-1">{vendor.name}</p>
-                <p className="text-sm text-slate-400">{vendor.email}</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-slate-400" />
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
-
-const PurchasesList = ({ purchases, onBack }) => {
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+const ProductCard = ({ product, onAddToCart }) => {
+  const [quantity, setQuantity] = useState(1);
 
   return (
-    <div>
-      <div className="flex items-center gap-4 mb-8">
-        <button
-          onClick={onBack}
-          className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
-          data-testid="back-from-purchases"
-        >
-          <ArrowLeft className="w-5 h-5 text-slate-700" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
-            My Purchases
-          </h1>
-          <p className="text-slate-500 mt-1">Products you've purchased</p>
-        </div>
-      </div>
-
-      {purchases.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <ShoppingBag className="w-8 h-8 text-slate-400" />
+    <div className="bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow">
+      <div className="aspect-square bg-slate-100 relative">
+        {product.image_url ? (
+          <img 
+            src={product.image_url} 
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="w-16 h-16 text-slate-300" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">No purchases yet</h3>
-          <p className="text-slate-500">Products from paid orders will appear here</p>
+        )}
+        {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
+          <span className="absolute top-3 right-3 bg-amber-500 text-white text-xs px-2 py-1 rounded-full">
+            Low Stock
+          </span>
+        )}
+        {product.stock_quantity === 0 && (
+          <span className="absolute top-3 right-3 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+            Out of Stock
+          </span>
+        )}
+      </div>
+      
+      <div className="p-4">
+        <div className="text-xs text-slate-500 mb-1">{product.vendor_name}</div>
+        <h3 className="font-semibold text-slate-900 mb-1">{product.name}</h3>
+        <p className="text-xs text-slate-500 mb-2 line-clamp-2">{product.description}</p>
+        
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xl font-bold text-[#E07A5F]">${product.price.toFixed(2)}</span>
+          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">{product.category}</span>
         </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Vendor</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Order Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {purchases.map((purchase, idx) => (
-                <tr key={idx} className="table-row-hover">
-                  <td className="font-medium text-slate-900">{purchase.product_name}</td>
-                  <td className="text-slate-500">{purchase.vendor_name}</td>
-                  <td>{purchase.quantity}</td>
-                  <td className="price-tag">${purchase.subtotal?.toFixed(2)}</td>
-                  <td className="text-slate-500">{formatDate(purchase.order_date)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+
+        {product.stock_quantity > 0 && (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border border-slate-200 rounded-lg">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="p-2 hover:bg-slate-100"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="w-10 text-center font-medium">{quantity}</span>
+              <button
+                onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
+                className="p-2 hover:bg-slate-100"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            <button
+              onClick={() => {
+                for (let i = 0; i < quantity; i++) {
+                  onAddToCart(product);
+                }
+                setQuantity(1);
+              }}
+              className="flex-1 btn-primary py-2 rounded-lg font-medium flex items-center justify-center gap-2"
+              data-testid={`add-to-cart-${product.id}`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Add
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-const ProductsList = ({ products, vendor, categories, selectedCategory, onCategoryChange, onBack, onAddToCart }) => (
+const PurchasesList = ({ purchases, onBack }) => (
   <div>
-    <div className="flex items-center justify-between mb-8">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={onBack}
-          className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
-          data-testid="back-to-vendors"
-        >
-          <ArrowLeft className="w-5 h-5 text-slate-700" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
-            {vendor?.company_name}
-          </h1>
-          <p className="text-slate-500 mt-1">Browse available products</p>
-        </div>
+    <div className="flex items-center gap-4 mb-8">
+      <button
+        onClick={onBack}
+        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+        data-testid="back-from-purchases"
+      >
+        <ArrowLeft className="w-5 h-5 text-slate-600" />
+      </button>
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+          My Purchases
+        </h1>
+        <p className="text-slate-500 mt-1">View your purchase history</p>
       </div>
-      
-      {/* Category Filter */}
-      {categories && categories.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-500" />
-          <select
-            value={selectedCategory || ''}
-            onChange={(e) => onCategoryChange(e.target.value)}
-            className="form-input py-2 px-3 text-sm"
-            data-testid="category-filter"
-          >
-            <option value="">All Categories</option>
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-      )}
     </div>
 
-    {products.length === 0 ? (
+    {purchases.length === 0 ? (
       <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Package className="w-8 h-8 text-slate-400" />
+          <History className="w-8 h-8 text-slate-400" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-900 mb-2">No products available</h3>
-        <p className="text-slate-500">This vendor hasn't added any products yet</p>
+        <h3 className="text-lg font-semibold text-slate-900 mb-2">No purchases yet</h3>
+        <p className="text-slate-500">Your purchase history will appear here</p>
       </div>
     ) : (
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {products.map(product => (
-          <div key={product.id} className="product-card">
-            <div className="product-image flex items-center justify-center">
-              {product.image_url ? (
-                <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-              ) : (
-                <ImageIcon className="w-12 h-12 text-slate-300" />
-              )}
-            </div>
-            <div className="p-4">
-              <div className="text-xs text-[#E07A5F] font-medium mb-1">{product.category}</div>
-              <h3 className="font-semibold text-slate-900 mb-1">{product.name}</h3>
-              <p className="text-sm text-slate-500 mb-3 line-clamp-2">{product.description}</p>
-              <div className="flex items-center justify-between mb-4">
-                <span className="price-tag text-xl">${product.price.toFixed(2)}</span>
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  product.stock_quantity > 0 ? 'badge-success' : 'badge-error'
-                }`}>
-                  {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
-                </span>
+      <div className="space-y-4">
+        {purchases.map(purchase => (
+          <div key={purchase.id} className="bg-white rounded-xl border border-slate-100 p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <div className="text-sm text-slate-500">Order #{purchase.id?.slice(0, 8)}</div>
+                <div className="text-lg font-semibold text-slate-900 mt-1">
+                  ${purchase.total_amount?.toFixed(2)}
+                </div>
               </div>
-              <button
-                onClick={() => onAddToCart(product)}
-                disabled={product.stock_quantity === 0}
-                className="w-full btn-primary py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                data-testid={`add-to-cart-${product.id}`}
-              >
-                <Plus className="w-4 h-4" />
-                Add to Cart
-              </button>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                purchase.payment_status === 'paid' ? 'badge-success' : 'badge-warning'
+              }`}>
+                {purchase.payment_status}
+              </span>
+            </div>
+            <div className="border-t border-slate-100 pt-4">
+              {purchase.items?.map((item, idx) => (
+                <div key={idx} className="flex justify-between text-sm mb-2">
+                  <span className="text-slate-600">{item.name} x {item.quantity}</span>
+                  <span className="text-slate-900">${item.subtotal?.toFixed(2)}</span>
+                </div>
+              ))}
             </div>
           </div>
         ))}
@@ -570,7 +546,6 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder })
             </span>
           </div>
 
-          {/* Progress Tracker */}
           {selectedOrder.status !== 'cancelled' && (
             <div className="mb-8">
               <div className="flex items-center justify-between relative">
@@ -597,7 +572,6 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder })
             </div>
           )}
 
-          {/* Tracking Info */}
           {selectedOrder.tracking_number && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-2 text-green-800 font-medium mb-3">
@@ -621,7 +595,6 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder })
             </div>
           )}
 
-          {/* Order Items */}
           <div className="mb-6">
             <h3 className="font-semibold text-slate-900 mb-3">Order Items</h3>
             <div className="bg-slate-50 rounded-xl p-4 space-y-3">
@@ -638,7 +611,6 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder })
             </div>
           </div>
 
-          {/* Addresses */}
           <div className="grid grid-cols-2 gap-6">
             <div>
               <h3 className="font-semibold text-slate-900 mb-2">Shipping Address</h3>
@@ -662,21 +634,19 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder })
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            data-testid="back-from-orders"
-          >
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
-              Track Orders
-            </h1>
-            <p className="text-slate-500 mt-1">Monitor your order status and deliveries</p>
-          </div>
+      <div className="flex items-center gap-4 mb-8">
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          data-testid="back-from-orders"
+        >
+          <ArrowLeft className="w-5 h-5 text-slate-600" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            Track Orders
+          </h1>
+          <p className="text-slate-500 mt-1">Monitor your order status and deliveries</p>
         </div>
       </div>
 
