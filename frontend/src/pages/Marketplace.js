@@ -133,8 +133,9 @@ const Marketplace = () => {
   };
 
   const goBack = () => {
-    if (view === 'purchases') {
+    if (view === 'purchases' || view === 'orders') {
       setView('vendors');
+      setSelectedOrder(null);
     } else {
       setView('vendors');
       setProducts([]);
