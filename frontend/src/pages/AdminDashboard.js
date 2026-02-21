@@ -322,6 +322,15 @@ const AdminDashboard = () => {
         onApprove={approveProductWithCommission}
       />
 
+      <OrderDetailModal 
+        isOpen={showOrderModal}
+        onClose={() => {
+          setShowOrderModal(false);
+          setSelectedOrder(null);
+        }}
+        order={selectedOrder}
+      />
+
       {/* Toast */}
       {toast && (
         <div className={`toast ${toast.type === 'error' ? 'bg-red-600' : 'bg-slate-900'}`}>
