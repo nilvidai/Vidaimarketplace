@@ -305,7 +305,9 @@ const ProductsTab = ({ products, categories, onAdd, onEdit, onDelete }) => (
   </div>
 );
 
-const OrdersTab = ({ orders, onUpdateStatus }) => {
+const OrdersTab = ({ orders, onUpdateStatus, onUpdateShipping, authHeaders }) => {
+  const [showShippingModal, setShowShippingModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const statusOptions = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
 
   const getStatusClass = (status) => {
@@ -318,6 +320,11 @@ const OrdersTab = ({ orders, onUpdateStatus }) => {
       cancelled: 'status-cancelled'
     };
     return classes[status] || 'status-pending';
+  };
+
+  const handleShippingClick = (order) => {
+    setSelectedOrder(order);
+    setShowShippingModal(true);
   };
 
   return (
@@ -398,10 +405,181 @@ const OrdersTab = ({ orders, onUpdateStatus }) => {
                   </div>
                 </div>
               </div>
+
+              {/* Shipping/Tracking Section */}
+              <div className="border-t border-slate-100 pt-4 mt-4">
+                {order.tracking_number ? (
+                  <div className="bg-green-50 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-green-600" />
+                        <span className="font-medium text-green-800">Tracking Info</span>
+                      </div>
+                      <button
+                        onClick={() => handleShippingClick(order)}
+                        className="text-sm text-green-600 hover:text-green-700"
+                        data-testid={`edit-shipping-${order.id}`}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
+                      <div>
+                        <div className="text-green-600">Carrier</div>
+                        <div className="font-medium">{order.carrier || '-'}</div>
+                      </div>
+                      <div>
+                        <div className="text-green-600">Tracking #</div>
+                        <div className="font-medium">{order.tracking_number}</div>
+                      </div>
+                      <div>
+                        <div className="text-green-600">Est. Delivery</div>
+                        <div className="font-medium">{order.estimated_delivery || '-'}</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleShippingClick(order)}
+                    className="w-full btn-secondary py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+                    data-testid={`add-shipping-${order.id}`}
+                  >
+                    <Truck className="w-4 h-4" />
+                    Add Shipping Details
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Shipping Modal */}
+      <ShippingModal
+        isOpen={showShippingModal}
+        onClose={() => {
+          setShowShippingModal(false);
+          setSelectedOrder(null);
+        }}
+        order={selectedOrder}
+        onSuccess={onUpdateShipping}
+        authHeaders={authHeaders}
+      />
+    </div>
+  );
+};
+
+const ShippingModal = ({ isOpen, onClose, order, onSuccess, authHeaders }) => {
+  const [formData, setFormData] = useState({
+    tracking_number: '',
+    carrier: '',
+    estimated_delivery: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (order) {
+      setFormData({
+        tracking_number: order.tracking_number || '',
+        carrier: order.carrier || '',
+        estimated_delivery: order.estimated_delivery || ''
+      });
+    }
+  }, [order]);
+
+  if (!isOpen || !order) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await axios.put(
+        `${API}/vendor/orders/${order.id}/shipping`,
+        formData,
+        authHeaders
+      );
+      onSuccess(res.data);
+      onClose();
+    } catch (err) {
+      alert('Failed to update shipping details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const carriers = ['FedEx', 'UPS', 'USPS', 'DHL', 'Other'];
+
+  return (
+    <div className="modal-backdrop modal-overlay" onClick={onClose}>
+      <div className="modal-box modal-content max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="modal-header flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Shipping Details</h2>
+            <p className="text-slate-500 text-sm">Order #{order.id.slice(0, 8)}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="modal-body">
+          <div className="form-group">
+            <label className="form-label">Carrier</label>
+            <select
+              value={formData.carrier}
+              onChange={(e) => setFormData({...formData, carrier: e.target.value})}
+              className="form-input"
+              data-testid="shipping-carrier-input"
+            >
+              <option value="">Select carrier...</option>
+              {carriers.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Tracking Number</label>
+            <input
+              type="text"
+              value={formData.tracking_number}
+              onChange={(e) => setFormData({...formData, tracking_number: e.target.value})}
+              className="form-input"
+              placeholder="e.g., 1Z999AA10123456784"
+              data-testid="shipping-tracking-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Estimated Delivery Date</label>
+            <input
+              type="date"
+              value={formData.estimated_delivery}
+              onChange={(e) => setFormData({...formData, estimated_delivery: e.target.value})}
+              className="form-input"
+              data-testid="shipping-delivery-input"
+            />
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 btn-secondary py-2.5 rounded-lg font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 btn-primary py-2.5 rounded-lg font-medium"
+              data-testid="shipping-submit-btn"
+            >
+              {loading ? 'Saving...' : 'Save Details'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
