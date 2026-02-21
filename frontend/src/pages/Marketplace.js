@@ -117,6 +117,58 @@ const Marketplace = () => {
     navigate('/');
   };
 
+  const handleAddToCart = (product) => {
+    addToCart(product, { id: product.vendor_id, company_name: product.vendor_name });
+    showToast(`${product.name} added to cart`);
+  };
+
+  const goBack = () => {
+    setView('products');
+    setSelectedOrder(null);
+  };
+
+  const getCategoryIcon = (category) => {
+    const icons = {
+      'Culture Media': '🧪',
+      'Consumables': '🔬',
+      'Equipment': '⚙️',
+      'Genetic Testing': '🧬',
+      'Cryopreservation': '❄️',
+      'Lab Supplies': '🏥'
+    };
+    return icons[category] || '📦';
+  };
+      setView('purchases');
+    } catch (err) {
+      showToast('Failed to fetch purchases', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API}/clinic/orders`, authHeaders);
+      setOrders(res.data);
+      setView('orders');
+    } catch (err) {
+      showToast('Failed to fetch orders', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   const selectVendor = (vendor) => {
     if (selectedVendor && selectedVendor.id !== vendor.id && cart.length > 0) {
       if (!window.confirm('Selecting a different vendor will clear your cart. Continue?')) {
