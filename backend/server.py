@@ -421,19 +421,28 @@ async def get_admin_inventory(admin=Depends(get_admin_user), vendor_id: Optional
     
     for product in products:
         vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "company_name": 1})
+        price = product["price"]
+        commission_rate = product.get("commission_rate", 10.0)
+        # Calculate vendor_amount dynamically if not stored
+        stored_vendor_amount = product.get("vendor_amount", 0)
+        if stored_vendor_amount == 0 and product.get("is_approved", False):
+            vendor_amount = round(price * (1 - commission_rate / 100), 2)
+        else:
+            vendor_amount = stored_vendor_amount
+        
         inventory.append({
             "product_id": product["id"],
             "product_name": product["name"],
             "sku": product["sku"],
             "category": product["category"],
-            "price": product["price"],
+            "price": price,
             "stock_quantity": product["stock_quantity"],
             "vendor_id": product["vendor_id"],
             "vendor_name": vendor["company_name"] if vendor else "Unknown",
             "is_approved": product.get("is_approved", False),
-            "commission_rate": product.get("commission_rate", 10.0),
-            "commission_amount": product.get("commission_amount", 0),
-            "vendor_amount": product.get("vendor_amount", 0)
+            "commission_rate": commission_rate,
+            "commission_amount": round(price * commission_rate / 100, 2),
+            "vendor_amount": vendor_amount
         })
     
     return inventory
