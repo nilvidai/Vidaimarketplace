@@ -633,6 +633,118 @@ async def get_all_approved_products(admin=Depends(get_admin_user), vendor_id: Op
         product["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
     return products
 
+# ==================== CONTACT SALES / ENQUIRY ROUTES ====================
+
+@api_router.post("/contact")
+async def submit_contact_enquiry(data: ContactEnquiry):
+    """Public endpoint to submit contact/sales enquiry"""
+    enquiry_id = str(uuid.uuid4())
+    enquiry_doc = {
+        "id": enquiry_id,
+        "name": data.name,
+        "email": data.email,
+        "company": data.company,
+        "phone": data.phone,
+        "message": data.message,
+        "enquiry_type": data.enquiry_type,
+        "status": "new",  # new, contacted, converted, closed
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "notes": ""
+    }
+    await db.enquiries.insert_one(enquiry_doc)
+    
+    # Get admin settings for email notification
+    settings = await db.settings.find_one({"type": "admin"}, {"_id": 0})
+    if settings and settings.get("contact_email") and settings.get("notify_on_enquiry", True):
+        # Email notification would be sent here
+        # For now, we just store it
+        pass
+    
+    return {"message": "Thank you for your enquiry. We'll get back to you soon!", "enquiry_id": enquiry_id}
+
+@api_router.get("/admin/enquiries")
+async def get_all_enquiries(admin=Depends(get_admin_user), status: Optional[str] = None):
+    """Get all contact enquiries"""
+    query = {}
+    if status:
+        query["status"] = status
+    
+    enquiries = await db.enquiries.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return enquiries
+
+@api_router.get("/admin/enquiries/{enquiry_id}")
+async def get_enquiry_detail(enquiry_id: str, admin=Depends(get_admin_user)):
+    """Get single enquiry details"""
+    enquiry = await db.enquiries.find_one({"id": enquiry_id}, {"_id": 0})
+    if not enquiry:
+        raise HTTPException(status_code=404, detail="Enquiry not found")
+    return enquiry
+
+@api_router.put("/admin/enquiries/{enquiry_id}/status")
+async def update_enquiry_status(enquiry_id: str, status: str, admin=Depends(get_admin_user)):
+    """Update enquiry status"""
+    valid_statuses = ["new", "contacted", "converted", "closed"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+    
+    result = await db.enquiries.update_one(
+        {"id": enquiry_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Enquiry not found")
+    return {"message": "Status updated successfully"}
+
+@api_router.put("/admin/enquiries/{enquiry_id}/notes")
+async def update_enquiry_notes(enquiry_id: str, notes: str = "", admin=Depends(get_admin_user)):
+    """Update enquiry notes"""
+    result = await db.enquiries.update_one(
+        {"id": enquiry_id},
+        {"$set": {"notes": notes, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Enquiry not found")
+    return {"message": "Notes updated successfully"}
+
+@api_router.delete("/admin/enquiries/{enquiry_id}")
+async def delete_enquiry(enquiry_id: str, admin=Depends(get_admin_user)):
+    """Delete an enquiry"""
+    result = await db.enquiries.delete_one({"id": enquiry_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Enquiry not found")
+    return {"message": "Enquiry deleted successfully"}
+
+@api_router.get("/admin/settings")
+async def get_admin_settings(admin=Depends(get_admin_user)):
+    """Get admin settings"""
+    settings = await db.settings.find_one({"type": "admin"}, {"_id": 0})
+    if not settings:
+        # Return default settings
+        return {
+            "type": "admin",
+            "contact_email": "",
+            "company_name": "VIDAI",
+            "notify_on_enquiry": True
+        }
+    return settings
+
+@api_router.put("/admin/settings")
+async def update_admin_settings(data: AdminSettings, admin=Depends(get_admin_user)):
+    """Update admin settings"""
+    settings_doc = {
+        "type": "admin",
+        "contact_email": data.contact_email,
+        "company_name": data.company_name,
+        "notify_on_enquiry": data.notify_on_enquiry,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.settings.update_one(
+        {"type": "admin"},
+        {"$set": settings_doc},
+        upsert=True
+    )
+    return {"message": "Settings updated successfully"}
+
 # ==================== VENDOR ROUTES ====================
 
 @api_router.post("/vendor/login")
