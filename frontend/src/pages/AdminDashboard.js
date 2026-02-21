@@ -4,7 +4,7 @@ import {
   Users, Building2, Link2, LogOut, Plus, Trash2, 
   CheckCircle, XCircle, ChevronRight, Package, ShoppingBag,
   Check, X, Image as ImageIcon, BarChart3, Boxes, DollarSign,
-  ClipboardList, Truck, Eye, MessageSquare, Settings, Mail
+  ClipboardList, Truck, Eye, MessageSquare, Settings, Mail, ArrowLeft, Home
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
