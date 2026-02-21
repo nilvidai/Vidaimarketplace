@@ -194,7 +194,17 @@ class OrderResponse(BaseModel):
     status: str
     payment_status: str
     stripe_session_id: Optional[str] = None
+    tracking_number: Optional[str] = None
+    carrier: Optional[str] = None
+    estimated_delivery: Optional[str] = None
+    shipped_at: Optional[str] = None
+    delivered_at: Optional[str] = None
     created_at: str
+
+class ShippingUpdate(BaseModel):
+    tracking_number: Optional[str] = None
+    carrier: Optional[str] = None
+    estimated_delivery: Optional[str] = None
 
 # ==================== HELPER FUNCTIONS ====================
 
