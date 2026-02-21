@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, MapPin, CreditCard, Check, 
   Image as ImageIcon, AlertCircle
@@ -12,12 +12,15 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, getToken } = useAuth();
   const { cart, selectedVendor, getCartTotal, clearCart } = useCart();
   
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
   const [useSameAddress, setUseSameAddress] = useState(true);
+  const [existingOrder, setExistingOrder] = useState(null);
   
   const [shippingAddress, setShippingAddress] = useState({
     address: user?.shipping_address || '',
@@ -29,12 +32,34 @@ const Checkout = () => {
 
   const authHeaders = { headers: { Authorization: `Bearer ${getToken()}` } };
 
+  // Check for existing order_id in URL (returning from cancelled Stripe payment)
+  useEffect(() => {
+    const orderId = searchParams.get('order_id');
+    if (orderId) {
+      fetchExistingOrder(orderId);
+    } else {
+      setPageLoading(false);
+    }
+  }, [searchParams]);
+
+  const fetchExistingOrder = async (orderId) => {
+    try {
+      const res = await axios.get(`${API}/clinic/orders/${orderId}`, authHeaders);
+      setExistingOrder(res.data);
+    } catch (err) {
+      setError('Order not found. Please try placing a new order.');
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
   if (!user || user.role !== 'clinic') {
     navigate('/');
     return null;
   }
 
-  if (cart.length === 0) {
+  // If no cart items AND no existing order, redirect to cart
+  if (!pageLoading && cart.length === 0 && !existingOrder) {
     navigate('/marketplace/cart');
     return null;
   }
@@ -44,26 +69,33 @@ const Checkout = () => {
     setError('');
 
     try {
-      // Create order
-      const orderData = {
-        items: cart.map(item => ({
-          product_id: item.product.id,
-          quantity: item.quantity
-        })),
-        billing_address: user.billing_address,
-        shipping_address: useSameAddress ? user.billing_address : shippingAddress.address,
-        city: useSameAddress ? user.city : shippingAddress.city,
-        state: useSameAddress ? user.state : shippingAddress.state,
-        zip_code: useSameAddress ? user.zip_code : shippingAddress.zip_code,
-        country: useSameAddress ? user.country : shippingAddress.country
-      };
+      let orderId;
 
-      const orderRes = await axios.post(`${API}/clinic/orders`, orderData, authHeaders);
-      const order = orderRes.data;
+      if (existingOrder) {
+        // Use existing order
+        orderId = existingOrder.id;
+      } else {
+        // Create new order
+        const orderData = {
+          items: cart.map(item => ({
+            product_id: item.product.id,
+            quantity: item.quantity
+          })),
+          billing_address: user.billing_address,
+          shipping_address: useSameAddress ? user.billing_address : shippingAddress.address,
+          city: useSameAddress ? user.city : shippingAddress.city,
+          state: useSameAddress ? user.state : shippingAddress.state,
+          zip_code: useSameAddress ? user.zip_code : shippingAddress.zip_code,
+          country: useSameAddress ? user.country : shippingAddress.country
+        };
+
+        const orderRes = await axios.post(`${API}/clinic/orders`, orderData, authHeaders);
+        orderId = orderRes.data.id;
+      }
 
       // Create Stripe checkout session
       const checkoutRes = await axios.post(`${API}/checkout/create-session`, {
-        order_id: order.id,
+        order_id: orderId,
         origin_url: window.location.origin
       }, authHeaders);
 
@@ -74,6 +106,27 @@ const Checkout = () => {
       setLoading(false);
     }
   };
+
+  // Calculate totals from either cart or existing order
+  const orderItems = existingOrder ? existingOrder.items : cart.map(item => ({
+    name: item.product.name,
+    quantity: item.quantity,
+    price: item.product.price,
+    subtotal: item.product.price * item.quantity,
+    image_url: item.product.image_url,
+    product_id: item.product.id
+  }));
+
+  const orderTotal = existingOrder ? existingOrder.total_amount : getCartTotal();
+  const vendorName = existingOrder ? existingOrder.vendor_name : selectedVendor?.company_name;
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
