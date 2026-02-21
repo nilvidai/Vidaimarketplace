@@ -251,6 +251,12 @@ const AdminDashboard = () => {
                 onApprove={handleApproveClick}
               />
             )}
+            {activeTab === 'orders' && (
+              <AdminOrdersTab 
+                orders={orders}
+                onViewOrder={handleViewOrder}
+              />
+            )}
             {activeTab === 'inventory' && (
               <InventoryTab inventory={inventory} vendors={vendors} />
             )}
