@@ -200,6 +200,7 @@ class OrderResponse(BaseModel):
     shipped_at: Optional[str] = None
     delivered_at: Optional[str] = None
     created_at: str
+    vendor_name: Optional[str] = None
 
 class ShippingUpdate(BaseModel):
     tracking_number: Optional[str] = None
