@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, LogOut, Plus, Minus, 
   Package, Image as ImageIcon, Search,
-  History, ClipboardList, Truck, Eye, ArrowLeft, ChevronRight
+  History, ClipboardList, Truck, Eye, ArrowLeft
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -15,12 +15,10 @@ const Marketplace = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [vendors, setVendors] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedVendorFilter, setSelectedVendorFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('products');
@@ -42,7 +40,7 @@ const Marketplace = () => {
 
   useEffect(() => {
     filterProducts();
-  }, [allProducts, selectedCategory, selectedVendorFilter, searchQuery]);
+  }, [allProducts, selectedCategory, searchQuery]);
 
   const fetchAllProducts = async () => {
     setLoading(true);
@@ -50,7 +48,6 @@ const Marketplace = () => {
       const res = await axios.get(`${API}/clinic/all-products`, authHeaders);
       setAllProducts(res.data.products || []);
       setCategories(res.data.categories || []);
-      setVendors(res.data.vendors || []);
     } catch (err) {
       showToast('Failed to fetch products', 'error');
     } finally {
@@ -63,10 +60,6 @@ const Marketplace = () => {
     
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(p => p.category === selectedCategory);
-    }
-    
-    if (selectedVendorFilter !== 'all') {
-      filtered = filtered.filter(p => p.vendor_id === selectedVendorFilter);
     }
     
     if (searchQuery) {
