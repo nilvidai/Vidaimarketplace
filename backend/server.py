@@ -975,7 +975,23 @@ async def create_order(data: OrderCreate, user=Depends(get_clinic_user)):
 @api_router.get("/clinic/orders", response_model=List[OrderResponse])
 async def get_clinic_orders(user=Depends(get_clinic_user)):
     orders = await db.orders.find({"clinic_id": user["clinic_id"]}, {"_id": 0}).to_list(1000)
+    # Add vendor name to each order
+    for order in orders:
+        vendor = await db.vendors.find_one({"id": order["vendor_id"]}, {"_id": 0, "company_name": 1})
+        order["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
     return orders
+
+@api_router.get("/clinic/orders/{order_id}")
+async def get_clinic_order_detail(order_id: str, user=Depends(get_clinic_user)):
+    """Get detailed order information for clinic with tracking"""
+    order = await db.orders.find_one({"id": order_id, "clinic_id": user["clinic_id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    vendor = await db.vendors.find_one({"id": order["vendor_id"]}, {"_id": 0, "company_name": 1})
+    order["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    
+    return order
 
 # ==================== STRIPE PAYMENT ROUTES ====================
 
