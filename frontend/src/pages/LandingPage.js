@@ -426,17 +426,11 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            src="https://images.pexels.com/photos/3825527/pexels-photo-3825527.jpeg?auto=compress&cs=tinysrgb&w=1920"
-            alt="Laboratory background"
-            className="w-full h-full object-cover opacity-20"
-          />
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+      <section className="relative overflow-hidden bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-8 items-center min-h-[600px]">
+            {/* Left Content */}
+            <div className="py-12">
               <span className="text-[#E07A5F] font-semibold text-sm tracking-wide uppercase">
                 EMR Integrated Marketplace
               </span>
@@ -469,95 +463,130 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* Device Mockups */}
-            <div className="relative flex justify-center items-end">
-              {/* Laptop Mockup */}
-              <div className="relative z-10">
-                <div className="bg-slate-800 rounded-t-xl p-2 w-[500px]">
-                  <div className="flex gap-1.5 mb-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  </div>
-                  <div className="bg-white rounded-lg overflow-hidden">
-                    <div className="bg-slate-100 p-2 flex items-center gap-2 border-b">
-                      <div className="w-6 h-6 bg-[#E07A5F] rounded flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">V</span>
-                      </div>
-                      <span className="text-xs font-medium text-slate-700">Marketplace</span>
-                      <div className="flex-1"></div>
-                      <div className="flex gap-2">
-                        <div className="w-4 h-4 bg-slate-300 rounded"></div>
-                        <div className="w-4 h-4 bg-slate-300 rounded"></div>
-                      </div>
-                    </div>
-                    <div className="p-3 h-[280px] overflow-hidden">
-                      <div className="text-xs font-semibold text-slate-800 mb-2">Equipment</div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-slate-50 rounded-lg p-2">
-                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
-                          <div className="text-[8px] font-medium text-slate-700">IVF Incubator</div>
-                          <div className="text-[8px] text-[#E07A5F]">$12,500</div>
-                        </div>
-                        <div className="bg-slate-50 rounded-lg p-2">
-                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
-                          <div className="text-[8px] font-medium text-slate-700">Microscope</div>
-                          <div className="text-[8px] text-[#E07A5F]">$8,900</div>
-                        </div>
-                        <div className="bg-slate-50 rounded-lg p-2">
-                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
-                          <div className="text-[8px] font-medium text-slate-700">Centrifuge</div>
-                          <div className="text-[8px] text-[#E07A5F]">$3,200</div>
-                        </div>
-                        <div className="bg-slate-50 rounded-lg p-2">
-                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
-                          <div className="text-[8px] font-medium text-slate-700">Culture Media</div>
-                          <div className="text-[8px] text-[#E07A5F]">$299</div>
-                        </div>
-                        <div className="bg-slate-50 rounded-lg p-2">
-                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
-                          <div className="text-[8px] font-medium text-slate-700">Consumables</div>
-                          <div className="text-[8px] text-[#E07A5F]">$149</div>
-                        </div>
-                        <div className="bg-slate-50 rounded-lg p-2">
-                          <div className="w-full aspect-square bg-slate-200 rounded mb-1"></div>
-                          <div className="text-[8px] font-medium text-slate-700">Test Kits</div>
-                          <div className="text-[8px] text-[#E07A5F]">$450</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-slate-700 h-4 rounded-b-lg"></div>
-                <div className="bg-slate-600 h-2 mx-16 rounded-b-lg"></div>
+            {/* Right Side - Lab Photo with Device Mockups */}
+            <div className="relative h-full min-h-[500px]">
+              {/* Lab Background Image */}
+              <div className="absolute inset-0 rounded-l-3xl overflow-hidden">
+                <img
+                  src="https://images.pexels.com/photos/3825527/pexels-photo-3825527.jpeg?auto=compress&cs=tinysrgb&w=1260"
+                  alt="Modern IVF Laboratory"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-l from-transparent to-white/80"></div>
               </div>
 
-              {/* Phone Mockup */}
-              <div className="absolute -right-4 bottom-0 z-20">
-                <div className="bg-slate-900 rounded-[24px] p-2 w-[140px] shadow-2xl">
-                  <div className="bg-white rounded-[16px] overflow-hidden">
-                    <div className="bg-slate-100 p-1.5 flex items-center gap-1 border-b">
-                      <div className="w-4 h-4 bg-[#E07A5F] rounded flex items-center justify-center">
-                        <span className="text-white text-[6px] font-bold">V</span>
-                      </div>
-                      <span className="text-[7px] font-medium text-slate-700">Marketplace</span>
+              {/* Device Mockups Container */}
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-end gap-4 z-10">
+                {/* Laptop Mockup */}
+                <div className="relative">
+                  <div className="bg-gray-800 rounded-t-lg p-1.5 w-[380px] shadow-2xl">
+                    <div className="flex gap-1 mb-1.5">
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
                     </div>
-                    <div className="p-2 h-[200px]">
-                      <div className="text-[7px] font-semibold text-slate-800 mb-1">Categories</div>
-                      <div className="space-y-1">
-                        <div className="bg-[#E07A5F] text-white text-[6px] px-2 py-1 rounded">Equipment</div>
-                        <div className="bg-slate-100 text-slate-700 text-[6px] px-2 py-1 rounded">Consumables</div>
-                        <div className="bg-slate-100 text-slate-700 text-[6px] px-2 py-1 rounded">Test Kits</div>
-                        <div className="bg-slate-100 text-slate-700 text-[6px] px-2 py-1 rounded">Culture Media</div>
-                      </div>
-                      <div className="mt-2 grid grid-cols-2 gap-1">
-                        <div className="bg-slate-50 rounded p-1">
-                          <div className="w-full aspect-square bg-slate-200 rounded mb-0.5"></div>
-                          <div className="text-[5px] font-medium">Incubator</div>
+                    <div className="bg-white rounded overflow-hidden">
+                      {/* Laptop Screen Content */}
+                      <div className="bg-white p-2 h-[220px]">
+                        <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
+                          <div className="w-5 h-5 bg-[#E07A5F] rounded flex items-center justify-center">
+                            <span className="text-white text-[8px] font-bold">V</span>
+                          </div>
+                          <span className="text-[10px] font-semibold text-gray-800">Marketplace</span>
+                          <div className="flex-1"></div>
+                          <div className="w-4 h-4 bg-gray-100 rounded"></div>
+                          <div className="w-4 h-4 bg-gray-100 rounded"></div>
                         </div>
-                        <div className="bg-slate-50 rounded p-1">
-                          <div className="w-full aspect-square bg-slate-200 rounded mb-0.5"></div>
-                          <div className="text-[5px] font-medium">Microscope</div>
+                        
+                        <div className="text-[9px] font-bold text-gray-800 mb-2">Equipment</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <div className="bg-gray-50 rounded p-1.5">
+                            <div className="w-full aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded mb-1 flex items-center justify-center">
+                              <span className="text-[8px]">🔬</span>
+                            </div>
+                            <div className="text-[7px] font-medium text-gray-700 truncate">IVF Incubator</div>
+                            <div className="text-[7px] text-[#E07A5F] font-semibold">$12,500</div>
+                          </div>
+                          <div className="bg-gray-50 rounded p-1.5">
+                            <div className="w-full aspect-square bg-gradient-to-br from-green-100 to-blue-100 rounded mb-1 flex items-center justify-center">
+                              <span className="text-[8px]">🧬</span>
+                            </div>
+                            <div className="text-[7px] font-medium text-gray-700 truncate">Microscope</div>
+                            <div className="text-[7px] text-[#E07A5F] font-semibold">$8,900</div>
+                          </div>
+                          <div className="bg-gray-50 rounded p-1.5">
+                            <div className="w-full aspect-square bg-gradient-to-br from-orange-100 to-pink-100 rounded mb-1 flex items-center justify-center">
+                              <span className="text-[8px]">⚙️</span>
+                            </div>
+                            <div className="text-[7px] font-medium text-gray-700 truncate">Centrifuge</div>
+                            <div className="text-[7px] text-[#E07A5F] font-semibold">$3,200</div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-[9px] font-bold text-gray-800 mt-2 mb-1">IVF Consumables</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <div className="bg-gray-50 rounded p-1.5">
+                            <div className="w-full aspect-square bg-gradient-to-br from-pink-100 to-purple-100 rounded mb-1 flex items-center justify-center">
+                              <span className="text-[8px]">🧪</span>
+                            </div>
+                            <div className="text-[7px] font-medium text-gray-700 truncate">Culture Media</div>
+                            <div className="text-[7px] text-[#E07A5F] font-semibold">$299</div>
+                          </div>
+                          <div className="bg-gray-50 rounded p-1.5">
+                            <div className="w-full aspect-square bg-gradient-to-br from-blue-100 to-green-100 rounded mb-1 flex items-center justify-center">
+                              <span className="text-[8px]">💉</span>
+                            </div>
+                            <div className="text-[7px] font-medium text-gray-700 truncate">Pipettes</div>
+                            <div className="text-[7px] text-[#E07A5F] font-semibold">$149</div>
+                          </div>
+                          <div className="bg-gray-50 rounded p-1.5">
+                            <div className="w-full aspect-square bg-gradient-to-br from-yellow-100 to-orange-100 rounded mb-1 flex items-center justify-center">
+                              <span className="text-[8px]">🧫</span>
+                            </div>
+                            <div className="text-[7px] font-medium text-gray-700 truncate">Test Kits</div>
+                            <div className="text-[7px] text-[#E07A5F] font-semibold">$450</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-700 h-3 rounded-b-lg"></div>
+                  <div className="bg-gray-600 h-1.5 mx-12 rounded-b-lg"></div>
+                </div>
+
+                {/* Phone Mockup */}
+                <div className="relative mb-4">
+                  <div className="bg-gray-900 rounded-[20px] p-1.5 w-[100px] shadow-2xl">
+                    <div className="bg-white rounded-[14px] overflow-hidden">
+                      <div className="p-1.5 h-[180px]">
+                        <div className="flex items-center gap-1 mb-1.5 pb-1 border-b border-gray-100">
+                          <div className="w-3 h-3 bg-[#E07A5F] rounded flex items-center justify-center">
+                            <span className="text-white text-[5px] font-bold">V</span>
+                          </div>
+                          <span className="text-[6px] font-semibold text-gray-800">Marketplace</span>
+                        </div>
+                        
+                        <div className="text-[6px] font-bold text-gray-800 mb-1">Categories</div>
+                        <div className="space-y-0.5 mb-2">
+                          <div className="bg-[#E07A5F] text-white text-[5px] px-1.5 py-0.5 rounded font-medium">Equipment</div>
+                          <div className="bg-gray-100 text-gray-700 text-[5px] px-1.5 py-0.5 rounded">Consumables</div>
+                          <div className="bg-gray-100 text-gray-700 text-[5px] px-1.5 py-0.5 rounded">Test Kits</div>
+                          <div className="bg-gray-100 text-gray-700 text-[5px] px-1.5 py-0.5 rounded">Culture Media</div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-1">
+                          <div className="bg-gray-50 rounded p-1">
+                            <div className="w-full aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded mb-0.5 flex items-center justify-center">
+                              <span className="text-[6px]">🔬</span>
+                            </div>
+                            <div className="text-[4px] font-medium truncate">Incubator</div>
+                          </div>
+                          <div className="bg-gray-50 rounded p-1">
+                            <div className="w-full aspect-square bg-gradient-to-br from-green-100 to-blue-100 rounded mb-0.5 flex items-center justify-center">
+                              <span className="text-[6px]">🧬</span>
+                            </div>
+                            <div className="text-[4px] font-medium truncate">Microscope</div>
+                          </div>
                         </div>
                       </div>
                     </div>
