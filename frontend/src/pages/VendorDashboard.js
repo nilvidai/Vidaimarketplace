@@ -96,7 +96,8 @@ const VendorDashboard = () => {
 
   const tabs = [
     { id: 'products', label: 'Products', icon: Package, count: products.length },
-    { id: 'orders', label: 'Orders', icon: ShoppingBag, count: orders.length }
+    { id: 'orders', label: 'Orders', icon: ShoppingBag, count: orders.length },
+    { id: 'inventory', label: 'Inventory', icon: Boxes }
   ];
 
   const categories = ['Consumables', 'Equipment', 'Genetic Testing', 'Cryopreservation', 'Media & Solutions'];
