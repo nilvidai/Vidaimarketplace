@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ShoppingCart, LogOut, Building2, ArrowLeft, Plus, Minus, 
-  Trash2, Package, ChevronRight, Image as ImageIcon
+  Trash2, Package, ChevronRight, Image as ImageIcon, Filter,
+  ShoppingBag, History
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -13,8 +14,11 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const Marketplace = () => {
   const [vendors, setVendors] = useState([]);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [purchases, setPurchases] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('vendors');
+  const [view, setView] = useState('vendors'); // vendors, products, purchases
   const [toast, setToast] = useState(null);
   
   const { user, logout, getToken } = useAuth();
@@ -29,6 +33,7 @@ const Marketplace = () => {
       return;
     }
     fetchVendors();
+    fetchCategories();
   }, [user, navigate]);
 
   const fetchVendors = async () => {
@@ -42,14 +47,38 @@ const Marketplace = () => {
     }
   };
 
-  const fetchProducts = async (vendorId) => {
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(`${API}/clinic/categories`, authHeaders);
+      setCategories(res.data);
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    }
+  };
+
+  const fetchProducts = async (vendorId, category = null) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/clinic/vendors/${vendorId}/products`, authHeaders);
+      let url = `${API}/clinic/vendors/${vendorId}/products`;
+      if (category) url += `?category=${encodeURIComponent(category)}`;
+      const res = await axios.get(url, authHeaders);
       setProducts(res.data);
       setView('products');
     } catch (err) {
       showToast('Failed to fetch products', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPurchases = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API}/clinic/purchases`, authHeaders);
+      setPurchases(res.data);
+      setView('purchases');
+    } catch (err) {
+      showToast('Failed to fetch purchases', 'error');
     } finally {
       setLoading(false);
     }
@@ -72,7 +101,15 @@ const Marketplace = () => {
       }
     }
     setSelectedVendor(vendor);
+    setSelectedCategory('');
     fetchProducts(vendor.id);
+  };
+
+  const handleCategoryFilter = (category) => {
+    setSelectedCategory(category);
+    if (selectedVendor) {
+      fetchProducts(selectedVendor.id, category || null);
+    }
   };
 
   const handleAddToCart = (product) => {
