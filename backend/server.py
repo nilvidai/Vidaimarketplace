@@ -121,6 +121,7 @@ class ProductUpdate(BaseModel):
 class ProductResponse(BaseModel):
     id: str
     vendor_id: str
+    vendor_name: Optional[str] = None
     name: str
     description: str
     price: float
@@ -129,7 +130,12 @@ class ProductResponse(BaseModel):
     stock_quantity: int
     image_url: Optional[str] = None
     is_active: bool = True
+    is_approved: bool = False
     created_at: str
+
+class ProductApproval(BaseModel):
+    product_id: str
+    approved: bool
 
 class CartItem(BaseModel):
     product_id: str
