@@ -124,7 +124,7 @@ const VendorDashboard = () => {
           {tabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left sidebar-link ${
                 activeTab === tab.id ? 'active' : 'text-slate-300'
               }`}
@@ -132,9 +132,11 @@ const VendorDashboard = () => {
             >
               <tab.icon className="w-5 h-5" />
               <span className="font-medium">{tab.label}</span>
-              <span className="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded-full">
-                {tab.count}
-              </span>
+              {tab.count !== undefined && (
+                <span className="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                  {tab.count}
+                </span>
+              )}
             </button>
           ))}
         </nav>
