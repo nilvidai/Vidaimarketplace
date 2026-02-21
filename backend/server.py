@@ -535,6 +535,44 @@ async def get_sales_report(admin=Depends(get_admin_user)):
         "by_vendor": list(vendor_sales.values())
     }
 
+@api_router.get("/admin/orders")
+async def get_all_orders_admin(admin=Depends(get_admin_user), status: Optional[str] = None, payment_status: Optional[str] = None):
+    """Get all orders for admin view with optional filters"""
+    query = {}
+    if status:
+        query["status"] = status
+    if payment_status:
+        query["payment_status"] = payment_status
+    
+    orders = await db.orders.find(query, {"_id": 0}).to_list(1000)
+    
+    # Enrich with clinic and vendor names
+    for order in orders:
+        clinic = await db.clinics.find_one({"id": order["clinic_id"]}, {"_id": 0, "clinic_name": 1})
+        vendor = await db.vendors.find_one({"id": order["vendor_id"]}, {"_id": 0, "company_name": 1})
+        order["clinic_name"] = clinic["clinic_name"] if clinic else "Unknown"
+        order["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    
+    return orders
+
+@api_router.get("/admin/orders/{order_id}")
+async def get_order_details_admin(order_id: str, admin=Depends(get_admin_user)):
+    """Get detailed order information for admin"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    clinic = await db.clinics.find_one({"id": order["clinic_id"]}, {"_id": 0, "clinic_name": 1, "email": 1, "phone": 1})
+    vendor = await db.vendors.find_one({"id": order["vendor_id"]}, {"_id": 0, "company_name": 1, "email": 1})
+    
+    order["clinic_name"] = clinic["clinic_name"] if clinic else "Unknown"
+    order["clinic_email"] = clinic.get("email", "") if clinic else ""
+    order["clinic_phone"] = clinic.get("phone", "") if clinic else ""
+    order["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    order["vendor_email"] = vendor.get("email", "") if vendor else ""
+    
+    return order
+
 @api_router.get("/admin/marketplace/vendors")
 async def get_all_vendors_marketplace(admin=Depends(get_admin_user)):
     """Get all vendors for admin marketplace view"""
