@@ -207,6 +207,19 @@ class ShippingUpdate(BaseModel):
     carrier: Optional[str] = None
     estimated_delivery: Optional[str] = None
 
+class ContactEnquiry(BaseModel):
+    name: str
+    email: str
+    company: Optional[str] = None
+    phone: Optional[str] = None
+    message: str
+    enquiry_type: str = "general"  # general, demo, pricing, partnership
+
+class AdminSettings(BaseModel):
+    contact_email: Optional[str] = None
+    company_name: Optional[str] = "VIDAI"
+    notify_on_enquiry: bool = True
+
 # ==================== HELPER FUNCTIONS ====================
 
 def hash_password(password: str) -> str:
