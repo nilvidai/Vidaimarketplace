@@ -451,4 +451,221 @@ const ProductsList = ({ products, vendor, categories, selectedCategory, onCatego
   </div>
 );
 
+const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder }) => {
+  const getStatusClass = (status) => {
+    const classes = {
+      pending: 'status-pending',
+      confirmed: 'status-confirmed',
+      processing: 'status-processing',
+      shipped: 'status-shipped',
+      delivered: 'status-delivered',
+      cancelled: 'status-cancelled'
+    };
+    return classes[status] || 'status-pending';
+  };
+
+  const getStatusStep = (status) => {
+    const steps = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
+    return steps.indexOf(status);
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleString();
+  };
+
+  if (selectedOrder) {
+    const currentStep = getStatusStep(selectedOrder.status);
+    const steps = [
+      { key: 'pending', label: 'Order Placed' },
+      { key: 'confirmed', label: 'Confirmed' },
+      { key: 'processing', label: 'Processing' },
+      { key: 'shipped', label: 'Shipped' },
+      { key: 'delivered', label: 'Delivered' }
+    ];
+
+    return (
+      <div>
+        <button
+          onClick={() => setSelectedOrder(null)}
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6"
+          data-testid="back-to-orders"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Orders
+        </button>
+
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+                Order #{selectedOrder.id.slice(0, 8)}
+              </h1>
+              <p className="text-slate-500 mt-1">
+                Placed on {formatDate(selectedOrder.created_at)}
+              </p>
+            </div>
+            <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${getStatusClass(selectedOrder.status)}`}>
+              {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
+            </span>
+          </div>
+
+          {/* Progress Tracker */}
+          {selectedOrder.status !== 'cancelled' && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between relative">
+                <div className="absolute top-5 left-0 right-0 h-1 bg-slate-200 -z-10"></div>
+                <div 
+                  className="absolute top-5 left-0 h-1 bg-[#E07A5F] -z-10 transition-all duration-500"
+                  style={{ width: `${(currentStep / 4) * 100}%` }}
+                ></div>
+                {steps.map((step, idx) => (
+                  <div key={step.key} className="flex flex-col items-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
+                      idx <= currentStep 
+                        ? 'bg-[#E07A5F] text-white' 
+                        : 'bg-slate-200 text-slate-500'
+                    }`}>
+                      {idx < currentStep ? '✓' : idx + 1}
+                    </div>
+                    <span className={`text-xs mt-2 ${idx <= currentStep ? 'text-slate-900 font-medium' : 'text-slate-500'}`}>
+                      {step.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tracking Info */}
+          {selectedOrder.tracking_number && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+              <div className="flex items-center gap-2 text-green-800 font-medium mb-3">
+                <Truck className="w-5 h-5" />
+                Tracking Information
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <div className="text-sm text-green-600">Carrier</div>
+                  <div className="font-medium text-green-900">{selectedOrder.carrier || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-green-600">Tracking Number</div>
+                  <div className="font-medium text-green-900">{selectedOrder.tracking_number}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-green-600">Est. Delivery</div>
+                  <div className="font-medium text-green-900">{selectedOrder.estimated_delivery || '-'}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Order Items */}
+          <div className="mb-6">
+            <h3 className="font-semibold text-slate-900 mb-3">Order Items</h3>
+            <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+              {selectedOrder.items?.map((item, idx) => (
+                <div key={idx} className="flex justify-between">
+                  <span className="text-slate-600">{item.name} × {item.quantity}</span>
+                  <span className="font-medium text-slate-900">${item.subtotal?.toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="border-t border-slate-200 pt-3 flex justify-between">
+                <span className="font-semibold text-slate-900">Total</span>
+                <span className="font-bold text-[#E07A5F]">${selectedOrder.total_amount?.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Addresses */}
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-semibold text-slate-900 mb-2">Shipping Address</h3>
+              <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-600">
+                {selectedOrder.shipping_address}<br />
+                {selectedOrder.city}, {selectedOrder.state} {selectedOrder.zip_code}<br />
+                {selectedOrder.country}
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-900 mb-2">Vendor</h3>
+              <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-600">
+                {selectedOrder.vendor_name || 'Unknown Vendor'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBack}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            data-testid="back-from-orders"
+          >
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+              Track Orders
+            </h1>
+            <p className="text-slate-500 mt-1">Monitor your order status and deliveries</p>
+          </div>
+        </div>
+      </div>
+
+      {orders.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ClipboardList className="w-8 h-8 text-slate-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No orders yet</h3>
+          <p className="text-slate-500">Your orders will appear here once you make a purchase</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {orders.map(order => (
+            <div 
+              key={order.id} 
+              className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => setSelectedOrder(order)}
+              data-testid={`order-card-${order.id}`}
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="text-sm text-slate-500">Order #{order.id.slice(0, 8)}</div>
+                  <div className="text-lg font-semibold text-slate-900 mt-1">
+                    ${order.total_amount?.toFixed(2)}
+                  </div>
+                  <div className="text-sm text-slate-500 mt-1">
+                    {order.items?.length} item(s) • {formatDate(order.created_at)}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(order.status)}`}>
+                    {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
+                  </span>
+                  {order.tracking_number && (
+                    <div className="flex items-center gap-1 text-green-600 text-sm">
+                      <Truck className="w-4 h-4" />
+                      <span>Tracking available</span>
+                    </div>
+                  )}
+                  <Eye className="w-5 h-5 text-slate-400" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default Marketplace;
