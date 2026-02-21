@@ -118,6 +118,7 @@ const LandingPage = () => {
   const { user } = useAuth();
   const [showVendorLogin, setShowVendorLogin] = useState(false);
   const [showClinicLogin, setShowClinicLogin] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const features = [
     {
