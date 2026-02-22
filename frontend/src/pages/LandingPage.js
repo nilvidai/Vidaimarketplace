@@ -319,10 +319,31 @@ const ContactSalesModal = ({ isOpen, onClose }) => {
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [showVendorLogin, setShowVendorLogin] = useState(false);
   const [showClinicLogin, setShowClinicLogin] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const getUserDashboardPath = () => {
+    if (!user) return '/';
+    if (user.role === 'admin') return '/admin/dashboard';
+    if (user.role === 'vendor') return '/vendor/dashboard';
+    if (user.role === 'clinic') return '/clinic/dashboard';
+    return '/';
+  };
+
+  const getUserDisplayName = () => {
+    if (!user) return '';
+    if (user.role === 'clinic') return user.clinic_name || user.name || 'Clinic';
+    if (user.role === 'vendor') return user.company_name || user.name || 'Vendor';
+    if (user.role === 'admin') return 'Admin';
+    return user.name || 'User';
+  };
 
   const features = [
     {
