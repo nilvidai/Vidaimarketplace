@@ -422,6 +422,103 @@ async def approve_product(data: ProductApproval, admin=Depends(get_admin_user)):
         "vendor_amount": update_data.get("vendor_amount", 0)
     }
 
+# ==================== ADMIN DASHBOARD STATS ====================
+
+@api_router.get("/admin/dashboard/stats")
+async def get_admin_dashboard_stats(admin=Depends(get_admin_user)):
+    """Get comprehensive dashboard statistics for admin"""
+    
+    # Count totals
+    total_vendors = await db.vendors.count_documents({"is_active": True})
+    total_clinics = await db.clinics.count_documents({"is_active": True})
+    total_products = await db.products.count_documents({"is_approved": True, "is_active": True})
+    pending_approvals = await db.products.count_documents({"is_approved": False})
+    
+    # Orders stats
+    all_orders = await db.orders.find({}, {"_id": 0}).to_list(10000)
+    total_orders = len(all_orders)
+    total_revenue = sum(o.get("total_amount", 0) for o in all_orders if o.get("payment_status") == "paid")
+    pending_orders = len([o for o in all_orders if o["status"] in ["pending", "confirmed", "processing"]])
+    shipped_orders = len([o for o in all_orders if o["status"] == "shipped"])
+    delivered_orders = len([o for o in all_orders if o["status"] == "delivered"])
+    
+    # Calculate commission earned
+    total_commission = 0
+    for order in all_orders:
+        if order.get("payment_status") == "paid":
+            for item in order.get("items", []):
+                commission_rate = item.get("commission_rate", 10.0)
+                total_commission += item["price"] * item["quantity"] * (commission_rate / 100)
+    
+    # Recent orders (last 5)
+    recent_orders = sorted(all_orders, key=lambda x: x.get("created_at", ""), reverse=True)[:5]
+    for order in recent_orders:
+        clinic = await db.clinics.find_one({"id": order["clinic_id"]}, {"_id": 0, "name": 1})
+        vendor = await db.vendors.find_one({"id": order["vendor_id"]}, {"_id": 0, "company_name": 1})
+        order["clinic_name"] = clinic["name"] if clinic else "Unknown"
+        order["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    
+    # Enquiries stats
+    total_enquiries = await db.enquiries.count_documents({})
+    new_enquiries = await db.enquiries.count_documents({"status": "new"})
+    
+    # Top vendors by sales
+    vendor_sales = {}
+    for order in all_orders:
+        if order.get("payment_status") == "paid":
+            vid = order["vendor_id"]
+            if vid not in vendor_sales:
+                vendor_sales[vid] = {"total": 0, "orders": 0}
+            vendor_sales[vid]["total"] += order.get("total_amount", 0)
+            vendor_sales[vid]["orders"] += 1
+    
+    top_vendors = []
+    for vid, stats in sorted(vendor_sales.items(), key=lambda x: x[1]["total"], reverse=True)[:5]:
+        vendor = await db.vendors.find_one({"id": vid}, {"_id": 0, "company_name": 1})
+        top_vendors.append({
+            "vendor_id": vid,
+            "vendor_name": vendor["company_name"] if vendor else "Unknown",
+            "total_sales": round(stats["total"], 2),
+            "order_count": stats["orders"]
+        })
+    
+    # Monthly revenue (last 6 months)
+    monthly_revenue = {}
+    for order in all_orders:
+        if order.get("payment_status") == "paid" and order.get("created_at"):
+            try:
+                date = datetime.fromisoformat(order["created_at"].replace("Z", "+00:00"))
+                month_key = date.strftime("%Y-%m")
+                if month_key not in monthly_revenue:
+                    monthly_revenue[month_key] = 0
+                monthly_revenue[month_key] += order.get("total_amount", 0)
+            except:
+                pass
+    
+    # Sort and get last 6 months
+    sorted_months = sorted(monthly_revenue.items(), reverse=True)[:6]
+    revenue_trend = [{"month": m, "revenue": round(r, 2)} for m, r in reversed(sorted_months)]
+    
+    return {
+        "summary": {
+            "total_vendors": total_vendors,
+            "total_clinics": total_clinics,
+            "total_products": total_products,
+            "pending_approvals": pending_approvals,
+            "total_orders": total_orders,
+            "total_revenue": round(total_revenue, 2),
+            "total_commission": round(total_commission, 2),
+            "pending_orders": pending_orders,
+            "shipped_orders": shipped_orders,
+            "delivered_orders": delivered_orders,
+            "total_enquiries": total_enquiries,
+            "new_enquiries": new_enquiries
+        },
+        "recent_orders": recent_orders,
+        "top_vendors": top_vendors,
+        "revenue_trend": revenue_trend
+    }
+
 @api_router.get("/admin/inventory")
 async def get_admin_inventory(admin=Depends(get_admin_user), vendor_id: Optional[str] = None):
     """Get inventory for all products or filtered by vendor"""
