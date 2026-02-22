@@ -427,11 +427,11 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-[700px]" data-testid="hero-section">
-        {/* Lab Background Image - IVF lab with scientists */}
+        {/* Lab Background Image - IVF lab with scientists and device mockups */}
         <div className="absolute inset-0">
           <img
-            src="https://static.prod-images.emergentagent.com/jobs/fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/images/3b31ffef7982aeaf6dcddd9b474d29d9ac7d8cfc3bab29ecf62b0e51e5cd1083.png"
-            alt="IVF laboratory with scientists and microscope"
+            src="https://customer-assets.emergentagent.com/job_fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/artifacts/ldm5gl1m_ChatGPT%20Image%20Feb%2022%2C%202026%2C%2001_50_33%20PM.png"
+            alt="IVF laboratory with scientists and marketplace mockups"
             className="w-full h-full object-cover object-center"
           />
           {/* Gradient Overlay for text readability */}
