@@ -426,37 +426,35 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section - Using complete reference image */}
-      <section className="relative overflow-hidden bg-slate-50" data-testid="hero-section">
-        <div className="w-full max-w-[1920px] mx-auto">
+      <section className="relative overflow-hidden bg-white" data-testid="hero-section">
+        <div className="w-full">
           <img
             src="https://customer-assets.emergentagent.com/job_fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/artifacts/w0geonth_WhatsApp%20Image%202026-02-21%20at%2017.50.17.jpeg"
             alt="VIDAI IVF Marketplace - EMR Integrated Healthcare Platform"
-            className="w-full h-auto"
+            className="w-full"
             style={{ 
-              minHeight: '600px',
-              maxHeight: '850px', 
-              objectFit: 'cover', 
-              objectPosition: 'center top',
-              imageRendering: 'crisp-edges'
+              height: 'auto',
+              objectFit: 'contain',
+              imageRendering: '-webkit-optimize-contrast'
             }}
           />
         </div>
         
         {/* Clickable buttons overlay */}
-        <div className="absolute bottom-[12%] left-[8%] flex gap-4 z-10">
+        <div className="absolute bottom-[8%] left-[4%] flex gap-3 z-10">
           <button
             onClick={handleMarketplaceClick}
-            className="cursor-pointer hover:opacity-80 transition-opacity"
+            className="cursor-pointer hover:scale-105 transition-transform"
             data-testid="hero-explore-btn"
-            style={{ width: '220px', height: '55px', background: 'transparent' }}
+            style={{ width: '180px', height: '48px', background: 'transparent' }}
           >
             <span className="sr-only">Explore Marketplace</span>
           </button>
           <button
             onClick={handleVendorPortalClick}
-            className="cursor-pointer hover:opacity-80 transition-opacity"
+            className="cursor-pointer hover:scale-105 transition-transform"
             data-testid="hero-vendor-btn"
-            style={{ width: '160px', height: '55px', background: 'transparent' }}
+            style={{ width: '140px', height: '48px', background: 'transparent' }}
           >
             <span className="sr-only">Vendor Portal</span>
           </button>
