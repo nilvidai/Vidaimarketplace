@@ -207,7 +207,9 @@ const AdminDashboard = () => {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'inventory') {
+    if (tabId === 'overview') {
+      fetchDashboardStats();
+    } else if (tabId === 'inventory') {
       fetchInventory();
     } else if (tabId === 'reports') {
       fetchCommissionReport();
@@ -220,13 +222,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const tabs = [
-    { id: 'vendors', label: 'Vendors', icon: Building2, count: vendors.length },
-    { id: 'clinics', label: 'Clinics', icon: Users, count: clinics.length },
-    { id: 'products', label: 'Approvals', icon: Package, count: pendingProducts.length },
-    { id: 'orders', label: 'Orders', icon: ClipboardList },
-    { id: 'enquiries', label: 'Enquiries', icon: MessageSquare },
-    { id: 'inventory', label: 'Inventory', icon: Boxes },
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'vendors', label: 'Vendors', icon: Users, count: vendors.length },
