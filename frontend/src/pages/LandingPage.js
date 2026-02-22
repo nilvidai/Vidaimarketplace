@@ -434,14 +434,12 @@ const LandingPage = () => {
             alt="IVF laboratory with scientists and marketplace mockups"
             className="w-full h-full object-cover object-center"
           />
-          {/* Gradient Overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center min-h-[700px]">
             {/* Left Content */}
-            <div className="max-w-xl py-20">
+            <div className="max-w-xl py-20 bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-lg">
               <span className="inline-block text-[#E07A5F] font-semibold text-sm tracking-wider uppercase mb-4">
                 EMR INTEGRATED MARKETPLACE
               </span>
