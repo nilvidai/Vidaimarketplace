@@ -539,7 +539,7 @@ const AdminDashboard = () => {
                 onAdd={() => setShowClinicModal(true)}
               />
             )}
-            {activeTab === 'products' && (
+            {activeTab === 'approvals' && (
               <ProductsApprovalTab 
                 products={pendingProducts}
                 onApprove={handleApproveClick}
