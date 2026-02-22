@@ -323,6 +323,213 @@ const AdminDashboard = () => {
           </div>
         ) : (
           <>
+            {activeTab === 'overview' && dashboardStats && (
+              <div className="space-y-8">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+                    Admin Dashboard
+                  </h1>
+                  <p className="text-slate-500 mt-1">Welcome back! Here's your marketplace overview.</p>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <DollarSign className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <span className="text-xs text-green-500 font-medium">Revenue</span>
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900">${dashboardStats.summary.total_revenue.toLocaleString()}</div>
+                    <div className="text-sm text-slate-500 mt-1">Total Revenue</div>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                        <ShoppingBag className="w-6 h-6 text-green-600" />
+                      </div>
+                      <span className="text-xs text-slate-400">Orders</span>
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900">{dashboardStats.summary.total_orders}</div>
+                    <div className="text-sm text-slate-500 mt-1">Total Orders</div>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <Users className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <span className="text-xs text-slate-400">Active</span>
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900">{dashboardStats.summary.total_vendors}</div>
+                    <div className="text-sm text-slate-500 mt-1">Vendors</div>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                        <Building2 className="w-6 h-6 text-orange-600" />
+                      </div>
+                      <span className="text-xs text-slate-400">Active</span>
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900">{dashboardStats.summary.total_clinics}</div>
+                    <div className="text-sm text-slate-500 mt-1">Clinics</div>
+                  </div>
+                </div>
+
+                {/* Second Row Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-gradient-to-r from-[#E07A5F] to-[#c4644d] rounded-xl p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <DollarSign className="w-8 h-8 opacity-80" />
+                      <span className="text-xs bg-white/20 px-2 py-1 rounded-full">Commission</span>
+                    </div>
+                    <div className="text-3xl font-bold">${dashboardStats.summary.total_commission.toLocaleString()}</div>
+                    <div className="text-sm opacity-80 mt-1">Total Earned</div>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-slate-100 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <Package className="w-8 h-8 text-teal-500" />
+                      <span className="text-xs text-slate-400">Products</span>
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900">{dashboardStats.summary.total_products}</div>
+                    <div className="text-sm text-slate-500 mt-1">Approved Products</div>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-slate-100 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <CheckCircle className="w-8 h-8 text-yellow-500" />
+                      {dashboardStats.summary.pending_approvals > 0 && (
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">Pending</span>
+                      )}
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900">{dashboardStats.summary.pending_approvals}</div>
+                    <div className="text-sm text-slate-500 mt-1">Pending Approvals</div>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-slate-100 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <MessageSquare className="w-8 h-8 text-indigo-500" />
+                      {dashboardStats.summary.new_enquiries > 0 && (
+                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">New</span>
+                      )}
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900">{dashboardStats.summary.new_enquiries}</div>
+                    <div className="text-sm text-slate-500 mt-1">New Enquiries</div>
+                  </div>
+                </div>
+
+                {/* Orders & Top Vendors */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Recent Orders */}
+                  <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+                    <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                      <h2 className="text-lg font-semibold text-slate-900">Recent Orders</h2>
+                      <button 
+                        onClick={() => setActiveTab('orders')}
+                        className="text-[#E07A5F] hover:text-[#c4644d] text-sm font-medium flex items-center gap-1"
+                      >
+                        View All <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {dashboardStats.recent_orders.length === 0 ? (
+                        <div className="p-8 text-center text-slate-500">No orders yet</div>
+                      ) : (
+                        dashboardStats.recent_orders.map(order => (
+                          <div key={order.id} className="p-4 hover:bg-slate-50">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium text-slate-900">#{order.id.slice(0, 8)}</div>
+                                <div className="text-sm text-slate-500">{order.clinic_name}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-semibold text-slate-900">${order.total_amount.toFixed(2)}</div>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                  order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {order.status}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Top Vendors */}
+                  <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+                    <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                      <h2 className="text-lg font-semibold text-slate-900">Top Vendors</h2>
+                      <button 
+                        onClick={() => setActiveTab('vendors')}
+                        className="text-[#E07A5F] hover:text-[#c4644d] text-sm font-medium flex items-center gap-1"
+                      >
+                        View All <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {dashboardStats.top_vendors.length === 0 ? (
+                        <div className="p-8 text-center text-slate-500">No sales data yet</div>
+                      ) : (
+                        dashboardStats.top_vendors.map((vendor, idx) => (
+                          <div key={vendor.vendor_id} className="p-4 hover:bg-slate-50 flex items-center gap-4">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                              idx === 0 ? 'bg-yellow-100 text-yellow-700' :
+                              idx === 1 ? 'bg-slate-200 text-slate-600' :
+                              idx === 2 ? 'bg-orange-100 text-orange-700' :
+                              'bg-slate-100 text-slate-500'
+                            }`}>
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-medium text-slate-900">{vendor.vendor_name}</div>
+                              <div className="text-sm text-slate-500">{vendor.order_count} orders</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold text-slate-900">${vendor.total_sales.toLocaleString()}</div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Status Summary */}
+                <div className="bg-white rounded-xl border border-slate-100 p-6">
+                  <h2 className="text-lg font-semibold text-slate-900 mb-6">Order Status Summary</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                      <Clock className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-yellow-700">{dashboardStats.summary.pending_orders}</div>
+                      <div className="text-sm text-yellow-600">Pending</div>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-4 text-center">
+                      <Truck className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-blue-700">{dashboardStats.summary.shipped_orders}</div>
+                      <div className="text-sm text-blue-600">Shipped</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                      <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-green-700">{dashboardStats.summary.delivered_orders}</div>
+                      <div className="text-sm text-green-600">Delivered</div>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-4 text-center">
+                      <ShoppingBag className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-slate-700">{dashboardStats.summary.total_orders}</div>
+                      <div className="text-sm text-slate-600">Total</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {activeTab === 'vendors' && (
               <VendorsTab 
                 vendors={vendors} 
