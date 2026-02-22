@@ -12,7 +12,8 @@ import { useAuth } from '../context/AuthContext';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('vendors');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [dashboardStats, setDashboardStats] = useState(null);
   const [vendors, setVendors] = useState([]);
   const [clinics, setClinics] = useState([]);
   const [pendingProducts, setPendingProducts] = useState([]);
@@ -46,7 +47,17 @@ const AdminDashboard = () => {
       return;
     }
     fetchData();
+    fetchDashboardStats();
   }, [user, navigate]);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const res = await axios.get(`${API}/admin/dashboard/stats`, authHeaders);
+      setDashboardStats(res.data);
+    } catch (err) {
+      console.error('Failed to fetch dashboard stats:', err);
+    }
+  };
 
   const fetchData = async () => {
     try {
