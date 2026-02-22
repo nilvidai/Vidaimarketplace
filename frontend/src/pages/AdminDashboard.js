@@ -227,6 +227,14 @@ const AdminDashboard = () => {
     { id: 'orders', label: 'Orders', icon: ClipboardList },
     { id: 'enquiries', label: 'Enquiries', icon: MessageSquare },
     { id: 'inventory', label: 'Inventory', icon: Boxes },
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'vendors', label: 'Vendors', icon: Users, count: vendors.length },
+    { id: 'clinics', label: 'Clinics', icon: Building2, count: clinics.length },
+    { id: 'approvals', label: 'Approvals', icon: CheckCircle, count: pendingProducts.length },
+    { id: 'orders', label: 'Orders', icon: ClipboardList },
+    { id: 'enquiries', label: 'Enquiries', icon: MessageSquare },
+    { id: 'inventory', label: 'Inventory', icon: Boxes },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
     { id: 'assignments', label: 'Assignments', icon: Link2 },
     { id: 'settings', label: 'Settings', icon: Settings }
