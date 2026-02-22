@@ -426,31 +426,37 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section - Using complete reference image */}
-      <section className="relative overflow-hidden" data-testid="hero-section">
-        <div className="w-full">
+      <section className="relative overflow-hidden bg-slate-50" data-testid="hero-section">
+        <div className="w-full max-w-[1920px] mx-auto">
           <img
             src="https://customer-assets.emergentagent.com/job_fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/artifacts/w0geonth_WhatsApp%20Image%202026-02-21%20at%2017.50.17.jpeg"
             alt="VIDAI IVF Marketplace - EMR Integrated Healthcare Platform"
             className="w-full h-auto"
-            style={{ maxHeight: '800px', objectFit: 'contain', objectPosition: 'top' }}
+            style={{ 
+              minHeight: '600px',
+              maxHeight: '850px', 
+              objectFit: 'cover', 
+              objectPosition: 'center top',
+              imageRendering: 'crisp-edges'
+            }}
           />
         </div>
         
-        {/* Invisible clickable buttons over the image buttons */}
-        <div className="absolute bottom-[15%] left-[5%] flex gap-4">
+        {/* Clickable buttons overlay */}
+        <div className="absolute bottom-[12%] left-[8%] flex gap-4 z-10">
           <button
             onClick={handleMarketplaceClick}
-            className="px-8 py-4 bg-transparent cursor-pointer"
+            className="cursor-pointer hover:opacity-80 transition-opacity"
             data-testid="hero-explore-btn"
-            style={{ width: '200px', height: '50px' }}
+            style={{ width: '220px', height: '55px', background: 'transparent' }}
           >
             <span className="sr-only">Explore Marketplace</span>
           </button>
           <button
             onClick={handleVendorPortalClick}
-            className="px-8 py-4 bg-transparent cursor-pointer"
+            className="cursor-pointer hover:opacity-80 transition-opacity"
             data-testid="hero-vendor-btn"
-            style={{ width: '150px', height: '50px' }}
+            style={{ width: '160px', height: '55px', background: 'transparent' }}
           >
             <span className="sr-only">Vendor Portal</span>
           </button>
