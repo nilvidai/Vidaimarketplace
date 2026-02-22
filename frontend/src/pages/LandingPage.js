@@ -419,28 +419,62 @@ const LandingPage = () => {
               </span>
             </div>
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/admin')}
-                className="text-slate-600 hover:text-slate-900 font-medium text-sm"
-                data-testid="admin-link"
-              >
-                Admin
-              </button>
-              <button
-                onClick={handleVendorPortalClick}
-                className="btn-secondary px-4 py-2 rounded-lg font-medium text-sm"
-                data-testid="vendor-portal-btn"
-              >
-                Vendor Portal
-              </button>
-              <button
-                onClick={handleMarketplaceClick}
-                className="btn-primary px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2"
-                data-testid="explore-marketplace-btn"
-              >
-                Explore Marketplace
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {user ? (
+                /* Logged in user navigation */
+                <>
+                  <div className="flex items-center gap-3 bg-slate-100 px-4 py-2 rounded-lg">
+                    <div className="w-8 h-8 bg-[#E07A5F] rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-semibold text-slate-900">{getUserDisplayName()}</div>
+                      <div className="text-xs text-slate-500 capitalize">{user.role}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => navigate(getUserDashboardPath())}
+                    className="btn-primary px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2"
+                    data-testid="go-to-dashboard-btn"
+                  >
+                    Go to Dashboard
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="text-slate-500 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100"
+                    data-testid="logout-btn"
+                    title="Logout"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </>
+              ) : (
+                /* Not logged in navigation */
+                <>
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="text-slate-600 hover:text-slate-900 font-medium text-sm"
+                    data-testid="admin-link"
+                  >
+                    Admin
+                  </button>
+                  <button
+                    onClick={handleVendorPortalClick}
+                    className="btn-secondary px-4 py-2 rounded-lg font-medium text-sm"
+                    data-testid="vendor-portal-btn"
+                  >
+                    Vendor Portal
+                  </button>
+                  <button
+                    onClick={handleMarketplaceClick}
+                    className="btn-primary px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2"
+                    data-testid="explore-marketplace-btn"
+                  >
+                    Explore Marketplace
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
