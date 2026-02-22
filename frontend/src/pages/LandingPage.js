@@ -425,54 +425,35 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-[700px] bg-gradient-to-r from-slate-50 via-slate-50 to-transparent" data-testid="hero-section">
-        {/* Right side background image */}
-        <div className="absolute right-0 top-0 bottom-0 w-[65%]">
+      {/* Hero Section - Using complete reference image */}
+      <section className="relative overflow-hidden" data-testid="hero-section">
+        <div className="w-full">
           <img
             src="https://customer-assets.emergentagent.com/job_fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/artifacts/w0geonth_WhatsApp%20Image%202026-02-21%20at%2017.50.17.jpeg"
-            alt="IVF laboratory with scientists and marketplace mockups"
-            className="w-full h-full object-cover object-left"
+            alt="VIDAI IVF Marketplace - EMR Integrated Healthcare Platform"
+            className="w-full h-auto"
+            style={{ maxHeight: '800px', objectFit: 'contain', objectPosition: 'top' }}
           />
         </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center min-h-[700px]">
-            {/* Left Content */}
-            <div className="max-w-lg py-20">
-              <span className="inline-block text-[#E07A5F] font-semibold text-sm tracking-wider uppercase mb-4">
-                EMR INTEGRATED MARKETPLACE
-              </span>
-              <h1 className="text-4xl md:text-5xl font-bold leading-tight text-slate-900" style={{ fontFamily: 'Manrope' }}>
-                VIDAI Revolutionizing Healthcare with{' '}
-                <span className="text-[#E07A5F]">AI-Powered</span>{' '}
-                IVF Marketplace
-              </h1>
-              <p className="text-lg text-slate-600 mt-6 leading-relaxed">
-                Seamlessly connect IVF clinics with trusted vendors. Purchase consumables, 
-                equipment, and genetic testing kits with complete traceability and compliance.
-              </p>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-4 mt-8">
-                <button
-                  onClick={handleMarketplaceClick}
-                  className="btn-primary px-6 py-3.5 rounded-lg font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-shadow"
-                  data-testid="hero-explore-btn"
-                >
-                  Explore Marketplace
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={handleVendorPortalClick}
-                  className="bg-white border-2 border-slate-300 text-slate-700 px-6 py-3.5 rounded-lg font-semibold hover:bg-slate-50 hover:border-slate-400 transition-all"
-                  data-testid="hero-vendor-btn"
-                >
-                  Vendor Portal
-                </button>
-              </div>
-            </div>
-          </div>
+        
+        {/* Invisible clickable buttons over the image buttons */}
+        <div className="absolute bottom-[15%] left-[5%] flex gap-4">
+          <button
+            onClick={handleMarketplaceClick}
+            className="px-8 py-4 bg-transparent cursor-pointer"
+            data-testid="hero-explore-btn"
+            style={{ width: '200px', height: '50px' }}
+          >
+            <span className="sr-only">Explore Marketplace</span>
+          </button>
+          <button
+            onClick={handleVendorPortalClick}
+            className="px-8 py-4 bg-transparent cursor-pointer"
+            data-testid="hero-vendor-btn"
+            style={{ width: '150px', height: '50px' }}
+          >
+            <span className="sr-only">Vendor Portal</span>
+          </button>
         </div>
       </section>
 
