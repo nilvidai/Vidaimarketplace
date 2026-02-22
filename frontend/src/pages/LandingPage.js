@@ -426,29 +426,29 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-[700px]" data-testid="hero-section">
-        {/* Lab Background Image - IVF lab with scientists and device mockups */}
-        <div className="absolute inset-0">
+      <section className="relative overflow-hidden min-h-[700px] bg-gradient-to-r from-slate-50 via-slate-50 to-transparent" data-testid="hero-section">
+        {/* Right side background image */}
+        <div className="absolute right-0 top-0 bottom-0 w-[65%]">
           <img
-            src="https://customer-assets.emergentagent.com/job_fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/artifacts/ldm5gl1m_ChatGPT%20Image%20Feb%2022%2C%202026%2C%2001_50_33%20PM.png"
+            src="https://customer-assets.emergentagent.com/job_fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/artifacts/w0geonth_WhatsApp%20Image%202026-02-21%20at%2017.50.17.jpeg"
             alt="IVF laboratory with scientists and marketplace mockups"
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-left"
           />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center min-h-[700px]">
             {/* Left Content */}
-            <div className="max-w-xl py-20 bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-lg">
+            <div className="max-w-lg py-20">
               <span className="inline-block text-[#E07A5F] font-semibold text-sm tracking-wider uppercase mb-4">
                 EMR INTEGRATED MARKETPLACE
               </span>
-              <h1 className="text-4xl md:text-5xl lg:text-[52px] font-bold leading-tight" style={{ fontFamily: 'Manrope' }}>
-                <span className="text-slate-900">VIDAI Revolutionizing Healthcare with </span>
-                <span className="text-[#E07A5F]">AI-Powered</span>
-                <span className="text-slate-900"> IVF Marketplace</span>
+              <h1 className="text-4xl md:text-5xl font-bold leading-tight text-slate-900" style={{ fontFamily: 'Manrope' }}>
+                VIDAI Revolutionizing Healthcare with{' '}
+                <span className="text-[#E07A5F]">AI-Powered</span>{' '}
+                IVF Marketplace
               </h1>
-              <p className="text-lg text-slate-600 mt-6 leading-relaxed max-w-lg">
+              <p className="text-lg text-slate-600 mt-6 leading-relaxed">
                 Seamlessly connect IVF clinics with trusted vendors. Purchase consumables, 
                 equipment, and genetic testing kits with complete traceability and compliance.
               </p>
