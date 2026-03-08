@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, LogOut, Plus, Minus, 
   Package, Image as ImageIcon, Search,
-  History, ClipboardList, Truck, Eye, ArrowLeft, Home
+  History, ClipboardList, Truck, Eye, ArrowLeft, Home, MessageCircle, Send, X
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -17,12 +17,18 @@ const Marketplace = () => {
   const [categories, setCategories] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [tickets, setTickets] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('products');
   const [toast, setToast] = useState(null);
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [ticketOrder, setTicketOrder] = useState(null);
+  const [ticketForm, setTicketForm] = useState({ subject: '', message: '', priority: 'medium' });
+  const [replyMessage, setReplyMessage] = useState('');
   
   const { user, logout, getToken } = useAuth();
   const { addToCart, getCartCount } = useCart();
@@ -98,6 +104,70 @@ const Marketplace = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchTickets = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API}/clinic/tickets`, authHeaders);
+      setTickets(res.data);
+      setView('tickets');
+    } catch (err) {
+      showToast('Failed to fetch tickets', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTicket = async (e) => {
+    e.preventDefault();
+    if (!ticketForm.subject || !ticketForm.message) {
+      showToast('Please fill all fields', 'error');
+      return;
+    }
+    
+    try {
+      await axios.post(`${API}/tickets`, {
+        order_id: ticketOrder.id,
+        subject: ticketForm.subject,
+        message: ticketForm.message,
+        priority: ticketForm.priority
+      }, authHeaders);
+      
+      showToast('Ticket created successfully');
+      setShowTicketModal(false);
+      setTicketForm({ subject: '', message: '', priority: 'medium' });
+      setTicketOrder(null);
+      fetchTickets();
+    } catch (err) {
+      showToast('Failed to create ticket', 'error');
+    }
+  };
+
+  const handleTicketReply = async () => {
+    if (!replyMessage.trim()) return;
+    
+    try {
+      await axios.post(`${API}/clinic/tickets/${selectedTicket.id}/reply`, {
+        message: replyMessage
+      }, authHeaders);
+      
+      showToast('Reply sent');
+      setReplyMessage('');
+      
+      // Refresh ticket
+      const res = await axios.get(`${API}/clinic/tickets`, authHeaders);
+      setTickets(res.data);
+      const updated = res.data.find(t => t.id === selectedTicket.id);
+      if (updated) setSelectedTicket(updated);
+    } catch (err) {
+      showToast('Failed to send reply', 'error');
+    }
+  };
+
+  const openTicketModal = (order) => {
+    setTicketOrder(order);
+    setShowTicketModal(true);
   };
 
   const showToast = (message, type = 'success') => {
@@ -195,6 +265,15 @@ const Marketplace = () => {
               >
                 <ClipboardList className="w-6 h-6 text-slate-700" />
               </button>
+
+              <button
+                onClick={fetchTickets}
+                className={`p-2 hover:bg-slate-100 rounded-lg transition-colors ${view === 'tickets' ? 'bg-slate-100' : ''}`}
+                data-testid="tickets-btn"
+                title="Support Tickets"
+              >
+                <MessageCircle className="w-6 h-6 text-slate-700" />
+              </button>
               
               <button
                 onClick={() => navigate('/marketplace/cart')}
@@ -237,6 +316,19 @@ const Marketplace = () => {
             onBack={goBack} 
             selectedOrder={selectedOrder}
             setSelectedOrder={setSelectedOrder}
+            onRaiseTicket={openTicketModal}
+          />
+        </main>
+      ) : view === 'tickets' ? (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <TicketsView 
+            tickets={tickets}
+            onBack={goBack}
+            selectedTicket={selectedTicket}
+            setSelectedTicket={setSelectedTicket}
+            replyMessage={replyMessage}
+            setReplyMessage={setReplyMessage}
+            onReply={handleTicketReply}
           />
         </main>
       ) : (
@@ -338,6 +430,79 @@ const Marketplace = () => {
       {toast && (
         <div className={`toast ${toast.type === 'error' ? 'bg-red-600' : 'bg-slate-900'}`}>
           {toast.message}
+        </div>
+      )}
+
+      {/* Create Ticket Modal */}
+      {showTicketModal && ticketOrder && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowTicketModal(false)}>
+          <div className="bg-white rounded-xl max-w-lg w-full p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-slate-900">Raise Support Ticket</h2>
+              <button onClick={() => setShowTicketModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-3 mb-4">
+              <div className="text-sm text-slate-500">Order</div>
+              <div className="font-medium text-slate-900">#{ticketOrder.id?.slice(0, 8)} - {ticketOrder.vendor_name}</div>
+            </div>
+
+            <form onSubmit={handleCreateTicket} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                <input
+                  type="text"
+                  value={ticketForm.subject}
+                  onChange={(e) => setTicketForm({...ticketForm, subject: e.target.value})}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E07A5F]"
+                  placeholder="Brief description of your issue"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+                <select
+                  value={ticketForm.priority}
+                  onChange={(e) => setTicketForm({...ticketForm, priority: e.target.value})}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E07A5F]"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Message</label>
+                <textarea
+                  value={ticketForm.message}
+                  onChange={(e) => setTicketForm({...ticketForm, message: e.target.value})}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E07A5F] h-32 resize-none"
+                  placeholder="Describe your issue in detail..."
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowTicketModal(false)}
+                  className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-[#E07A5F] text-white rounded-lg hover:bg-[#c4644d]"
+                >
+                  Create Ticket
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
@@ -495,7 +660,7 @@ const PurchasesList = ({ purchases, onBack }) => (
   </div>
 );
 
-const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder }) => {
+const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder, onRaiseTicket }) => {
   const getStatusClass = (status) => {
     const classes = {
       pending: 'status-pending',
@@ -635,6 +800,18 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder })
               </div>
             </div>
           </div>
+
+          {/* Raise Ticket Button */}
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <button
+              onClick={() => onRaiseTicket(selectedOrder)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+              data-testid="raise-ticket-btn"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Raise Support Ticket
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -696,6 +873,171 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder })
                     </div>
                   )}
                   <Eye className="w-5 h-5 text-slate-400" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const TicketsView = ({ tickets, onBack, selectedTicket, setSelectedTicket, replyMessage, setReplyMessage, onReply }) => {
+  const getStatusClass = (status) => {
+    const classes = {
+      open: 'bg-yellow-100 text-yellow-700',
+      in_progress: 'bg-blue-100 text-blue-700',
+      resolved: 'bg-green-100 text-green-700',
+      closed: 'bg-slate-100 text-slate-700'
+    };
+    return classes[status] || 'bg-slate-100 text-slate-700';
+  };
+
+  const getPriorityClass = (priority) => {
+    const classes = {
+      low: 'bg-slate-100 text-slate-600',
+      medium: 'bg-yellow-100 text-yellow-700',
+      high: 'bg-red-100 text-red-700'
+    };
+    return classes[priority] || 'bg-slate-100 text-slate-600';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleString();
+  };
+
+  if (selectedTicket) {
+    return (
+      <div>
+        <button
+          onClick={() => setSelectedTicket(null)}
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Tickets
+        </button>
+
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+                {selectedTicket.subject}
+              </h1>
+              <p className="text-slate-500 mt-1">
+                Order #{selectedTicket.order_id?.slice(0, 8)} • {selectedTicket.vendor_name}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityClass(selectedTicket.priority)}`}>
+                {selectedTicket.priority}
+              </span>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(selectedTicket.status)}`}>
+                {selectedTicket.status.replace('_', ' ')}
+              </span>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto">
+            {selectedTicket.messages?.map((msg, idx) => (
+              <div 
+                key={msg.id || idx}
+                className={`p-4 rounded-xl ${
+                  msg.sender_type === 'clinic' 
+                    ? 'bg-blue-50 ml-8' 
+                    : msg.sender_type === 'admin'
+                    ? 'bg-purple-50 mr-8'
+                    : 'bg-slate-50 mr-8'
+                }`}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-slate-900">{msg.sender_name}</span>
+                  <span className="text-xs text-slate-500">{formatDate(msg.created_at)}</span>
+                </div>
+                <p className="text-slate-700">{msg.message}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Reply Box */}
+          {selectedTicket.status !== 'closed' && (
+            <div className="border-t border-slate-100 pt-4">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                  placeholder="Type your reply..."
+                  className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E07A5F]"
+                  onKeyPress={(e) => e.key === 'Enter' && onReply()}
+                />
+                <button
+                  onClick={onReply}
+                  className="px-4 py-2 bg-[#E07A5F] text-white rounded-lg hover:bg-[#c4644d] flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Send
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-4 mb-8">
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-slate-600" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            Support Tickets
+          </h1>
+          <p className="text-slate-500 mt-1">View and manage your support requests</p>
+        </div>
+      </div>
+
+      {tickets.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MessageCircle className="w-8 h-8 text-slate-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No tickets yet</h3>
+          <p className="text-slate-500">You can raise a ticket from your order details</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {tickets.map(ticket => (
+            <div 
+              key={ticket.id}
+              onClick={() => setSelectedTicket(ticket)}
+              className="bg-white rounded-xl border border-slate-100 p-4 hover:shadow-lg cursor-pointer transition-all"
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-slate-900">{ticket.subject}</h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Order #{ticket.order_id?.slice(0, 8)} • {ticket.vendor_name}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-2">
+                    {ticket.messages?.length || 0} messages • Last updated {formatDate(ticket.updated_at)}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 items-end">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(ticket.status)}`}>
+                    {ticket.status.replace('_', ' ')}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-xs ${getPriorityClass(ticket.priority)}`}>
+                    {ticket.priority}
+                  </span>
                 </div>
               </div>
             </div>

@@ -20,6 +20,9 @@ const AdminDashboard = () => {
   const [inventory, setInventory] = useState([]);
   const [commissionReport, setCommissionReport] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [ticketReplyMessage, setTicketReplyMessage] = useState('');
   const [enquiries, setEnquiries] = useState([]);
   const [adminSettings, setAdminSettings] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -121,6 +124,49 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchTickets = async () => {
+    try {
+      const res = await axios.get(`${API}/admin/tickets`, authHeaders);
+      setTickets(res.data);
+    } catch (err) {
+      console.error('Failed to fetch tickets');
+    }
+  };
+
+  const handleTicketReply = async () => {
+    if (!ticketReplyMessage.trim() || !selectedTicket) return;
+    
+    try {
+      await axios.post(`${API}/admin/tickets/${selectedTicket.id}/reply`, {
+        message: ticketReplyMessage
+      }, authHeaders);
+      
+      showToast('Reply sent');
+      setTicketReplyMessage('');
+      
+      // Refresh tickets
+      const res = await axios.get(`${API}/admin/tickets`, authHeaders);
+      setTickets(res.data);
+      const updated = res.data.find(t => t.id === selectedTicket.id);
+      if (updated) setSelectedTicket(updated);
+    } catch (err) {
+      showToast('Failed to send reply', 'error');
+    }
+  };
+
+  const updateTicketStatus = async (ticketId, status) => {
+    try {
+      await axios.put(`${API}/admin/tickets/${ticketId}/status?status=${status}`, {}, authHeaders);
+      showToast('Status updated');
+      fetchTickets();
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket({ ...selectedTicket, status });
+      }
+    } catch (err) {
+      showToast('Failed to update status', 'error');
+    }
+  };
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -215,6 +261,8 @@ const AdminDashboard = () => {
       fetchCommissionReport();
     } else if (tabId === 'orders') {
       fetchOrders();
+    } else if (tabId === 'tickets') {
+      fetchTickets();
     } else if (tabId === 'enquiries') {
       fetchEnquiries();
     } else if (tabId === 'settings') {
@@ -228,7 +276,8 @@ const AdminDashboard = () => {
     { id: 'clinics', label: 'Clinics', icon: Building2, count: clinics.length },
     { id: 'approvals', label: 'Approvals', icon: CheckCircle, count: pendingProducts.length },
     { id: 'orders', label: 'Orders', icon: ClipboardList },
-    { id: 'enquiries', label: 'Enquiries', icon: MessageSquare },
+    { id: 'tickets', label: 'Tickets', icon: MessageSquare },
+    { id: 'enquiries', label: 'Enquiries', icon: Mail },
     { id: 'inventory', label: 'Inventory', icon: Boxes },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
     { id: 'assignments', label: 'Assignments', icon: Link2 },
@@ -575,6 +624,17 @@ const AdminDashboard = () => {
                 onView={handleViewEnquiry}
                 onUpdateStatus={updateEnquiryStatus}
                 onDelete={deleteEnquiry}
+              />
+            )}
+            {activeTab === 'tickets' && (
+              <AdminTicketsTab 
+                tickets={tickets}
+                selectedTicket={selectedTicket}
+                setSelectedTicket={setSelectedTicket}
+                replyMessage={ticketReplyMessage}
+                setReplyMessage={setTicketReplyMessage}
+                onReply={handleTicketReply}
+                onStatusUpdate={updateTicketStatus}
               />
             )}
             {activeTab === 'settings' && (
@@ -2330,6 +2390,197 @@ const EnquiryDetailModal = ({ isOpen, onClose, enquiry, onUpdateStatus, authHead
           </button>
         </div>
       </div>
+    </div>
+  );
+};
+
+const AdminTicketsTab = ({ tickets, selectedTicket, setSelectedTicket, replyMessage, setReplyMessage, onReply, onStatusUpdate }) => {
+  const getStatusClass = (status) => {
+    const classes = {
+      open: 'bg-yellow-100 text-yellow-700',
+      in_progress: 'bg-blue-100 text-blue-700',
+      resolved: 'bg-green-100 text-green-700',
+      closed: 'bg-slate-100 text-slate-700'
+    };
+    return classes[status] || 'bg-slate-100 text-slate-700';
+  };
+
+  const getPriorityClass = (priority) => {
+    const classes = {
+      low: 'bg-slate-100 text-slate-600',
+      medium: 'bg-yellow-100 text-yellow-700',
+      high: 'bg-red-100 text-red-700'
+    };
+    return classes[priority] || 'bg-slate-100 text-slate-600';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleString();
+  };
+
+  if (selectedTicket) {
+    return (
+      <div>
+        <button
+          onClick={() => setSelectedTicket(null)}
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6"
+        >
+          <ChevronRight className="w-4 h-4 rotate-180" />
+          Back to All Tickets
+        </button>
+
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+                {selectedTicket.subject}
+              </h1>
+              <p className="text-slate-500 mt-1">
+                Clinic: {selectedTicket.clinic_name} • Vendor: {selectedTicket.vendor_name} • Order #{selectedTicket.order_id?.slice(0, 8)}
+              </p>
+            </div>
+            <div className="flex gap-2 items-center">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityClass(selectedTicket.priority)}`}>
+                {selectedTicket.priority}
+              </span>
+              <select
+                value={selectedTicket.status}
+                onChange={(e) => onStatusUpdate(selectedTicket.id, e.target.value)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border-0 cursor-pointer ${getStatusClass(selectedTicket.status)}`}
+              >
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto">
+            {selectedTicket.messages?.map((msg, idx) => (
+              <div 
+                key={msg.id || idx}
+                className={`p-4 rounded-xl ${
+                  msg.sender_type === 'admin' 
+                    ? 'bg-purple-50 ml-8' 
+                    : msg.sender_type === 'vendor'
+                    ? 'bg-teal-50'
+                    : 'bg-slate-50 mr-8'
+                }`}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-slate-900">
+                    {msg.sender_name}
+                    <span className="ml-2 text-xs text-slate-400">({msg.sender_type})</span>
+                  </span>
+                  <span className="text-xs text-slate-500">{formatDate(msg.created_at)}</span>
+                </div>
+                <p className="text-slate-700">{msg.message}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Reply Box */}
+          {selectedTicket.status !== 'closed' && (
+            <div className="border-t border-slate-100 pt-4">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                  placeholder="Type admin reply..."
+                  className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  onKeyPress={(e) => e.key === 'Enter' && onReply()}
+                />
+                <button
+                  onClick={onReply}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+                >
+                  <Mail className="w-4 h-4" />
+                  Send
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            All Support Tickets
+          </h1>
+          <p className="text-slate-500 mt-1">View and manage all customer support requests</p>
+        </div>
+        <div className="flex gap-2">
+          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm">
+            {tickets.filter(t => t.status === 'open').length} Open
+          </span>
+          <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+            {tickets.filter(t => t.status === 'in_progress').length} In Progress
+          </span>
+        </div>
+      </div>
+
+      {tickets.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MessageSquare className="w-8 h-8 text-slate-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No tickets yet</h3>
+          <p className="text-slate-500">Support tickets will appear here</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Subject</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Clinic</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Vendor</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Priority</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Messages</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Updated</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {tickets.map(ticket => (
+                <tr 
+                  key={ticket.id}
+                  onClick={() => setSelectedTicket(ticket)}
+                  className="hover:bg-slate-50 cursor-pointer"
+                >
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-900">{ticket.subject}</div>
+                    <div className="text-xs text-slate-500">Order #{ticket.order_id?.slice(0, 8)}</div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{ticket.clinic_name}</td>
+                  <td className="px-4 py-3 text-slate-600">{ticket.vendor_name}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`px-2 py-0.5 rounded text-xs ${getPriorityClass(ticket.priority)}`}>
+                      {ticket.priority}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(ticket.status)}`}>
+                      {ticket.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center text-slate-600">{ticket.messages?.length || 0}</td>
+                  <td className="px-4 py-3 text-right text-xs text-slate-500">{formatDate(ticket.updated_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

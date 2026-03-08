@@ -141,6 +141,16 @@ class ProductApproval(BaseModel):
     approved: bool
     commission_rate: float = 10.0  # Commission percentage for VIDAI
 
+class TicketCreate(BaseModel):
+    order_id: str
+    product_id: Optional[str] = None
+    subject: str
+    message: str
+    priority: str = "medium"  # low, medium, high
+
+class TicketReply(BaseModel):
+    message: str
+
 class InventoryItem(BaseModel):
     product_id: str
     product_name: str
@@ -1652,6 +1662,203 @@ async def get_clinic_pricing_trends(user=Depends(get_clinic_user)):
         "total_products": len(products),
         "total_vendors": len(vendors)
     }
+
+# ==================== TICKET/SUPPORT SYSTEM ====================
+
+@api_router.post("/tickets")
+async def create_ticket(ticket: TicketCreate, user=Depends(get_clinic_user)):
+    """Create a support ticket for an order"""
+    clinic_id = user["clinic_id"]
+    
+    # Verify order belongs to clinic
+    order = await db.orders.find_one({"id": ticket.order_id, "clinic_id": clinic_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    ticket_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    ticket_data = {
+        "id": ticket_id,
+        "order_id": ticket.order_id,
+        "product_id": ticket.product_id,
+        "clinic_id": clinic_id,
+        "clinic_name": user.get("clinic_name", "Unknown Clinic"),
+        "vendor_id": order["vendor_id"],
+        "subject": ticket.subject,
+        "priority": ticket.priority,
+        "status": "open",  # open, in_progress, resolved, closed
+        "messages": [
+            {
+                "id": str(uuid.uuid4()),
+                "sender_type": "clinic",
+                "sender_id": clinic_id,
+                "sender_name": user.get("clinic_name", "Clinic"),
+                "message": ticket.message,
+                "created_at": now
+            }
+        ],
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.tickets.insert_one(ticket_data)
+    
+    return {"message": "Ticket created successfully", "ticket_id": ticket_id}
+
+@api_router.get("/clinic/tickets")
+async def get_clinic_tickets(user=Depends(get_clinic_user)):
+    """Get all tickets for a clinic"""
+    clinic_id = user["clinic_id"]
+    tickets = await db.tickets.find({"clinic_id": clinic_id}, {"_id": 0}).to_list(100)
+    
+    # Add vendor name to each ticket
+    for ticket in tickets:
+        vendor = await db.vendors.find_one({"id": ticket["vendor_id"]}, {"_id": 0, "company_name": 1})
+        ticket["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    
+    return sorted(tickets, key=lambda x: x.get("updated_at", ""), reverse=True)
+
+@api_router.post("/clinic/tickets/{ticket_id}/reply")
+async def clinic_reply_ticket(ticket_id: str, reply: TicketReply, user=Depends(get_clinic_user)):
+    """Add a reply to a ticket from clinic"""
+    clinic_id = user["clinic_id"]
+    
+    ticket = await db.tickets.find_one({"id": ticket_id, "clinic_id": clinic_id})
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    message = {
+        "id": str(uuid.uuid4()),
+        "sender_type": "clinic",
+        "sender_id": clinic_id,
+        "sender_name": user.get("clinic_name", "Clinic"),
+        "message": reply.message,
+        "created_at": now
+    }
+    
+    await db.tickets.update_one(
+        {"id": ticket_id},
+        {
+            "$push": {"messages": message},
+            "$set": {"updated_at": now}
+        }
+    )
+    
+    return {"message": "Reply added successfully"}
+
+@api_router.get("/vendor/tickets")
+async def get_vendor_tickets(user=Depends(get_vendor_user)):
+    """Get all tickets for a vendor"""
+    vendor_id = user["vendor_id"]
+    tickets = await db.tickets.find({"vendor_id": vendor_id}, {"_id": 0}).to_list(100)
+    
+    return sorted(tickets, key=lambda x: x.get("updated_at", ""), reverse=True)
+
+@api_router.post("/vendor/tickets/{ticket_id}/reply")
+async def vendor_reply_ticket(ticket_id: str, reply: TicketReply, user=Depends(get_vendor_user)):
+    """Add a reply to a ticket from vendor"""
+    vendor_id = user["vendor_id"]
+    
+    ticket = await db.tickets.find_one({"id": ticket_id, "vendor_id": vendor_id})
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "company_name": 1})
+    now = datetime.now(timezone.utc).isoformat()
+    
+    message = {
+        "id": str(uuid.uuid4()),
+        "sender_type": "vendor",
+        "sender_id": vendor_id,
+        "sender_name": vendor["company_name"] if vendor else "Vendor",
+        "message": reply.message,
+        "created_at": now
+    }
+    
+    await db.tickets.update_one(
+        {"id": ticket_id},
+        {
+            "$push": {"messages": message},
+            "$set": {"updated_at": now, "status": "in_progress"}
+        }
+    )
+    
+    return {"message": "Reply added successfully"}
+
+@api_router.put("/vendor/tickets/{ticket_id}/status")
+async def vendor_update_ticket_status(ticket_id: str, status: str = "", user=Depends(get_vendor_user)):
+    """Update ticket status"""
+    vendor_id = user["vendor_id"]
+    
+    if status not in ["open", "in_progress", "resolved", "closed"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    result = await db.tickets.update_one(
+        {"id": ticket_id, "vendor_id": vendor_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    return {"message": "Status updated"}
+
+@api_router.get("/admin/tickets")
+async def get_admin_tickets(admin=Depends(get_admin_user)):
+    """Get all tickets for admin"""
+    tickets = await db.tickets.find({}, {"_id": 0}).to_list(500)
+    
+    # Add vendor and clinic names
+    for ticket in tickets:
+        vendor = await db.vendors.find_one({"id": ticket["vendor_id"]}, {"_id": 0, "company_name": 1})
+        ticket["vendor_name"] = vendor["company_name"] if vendor else "Unknown"
+    
+    return sorted(tickets, key=lambda x: x.get("updated_at", ""), reverse=True)
+
+@api_router.post("/admin/tickets/{ticket_id}/reply")
+async def admin_reply_ticket(ticket_id: str, reply: TicketReply, admin=Depends(get_admin_user)):
+    """Add a reply to a ticket from admin"""
+    ticket = await db.tickets.find_one({"id": ticket_id})
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    message = {
+        "id": str(uuid.uuid4()),
+        "sender_type": "admin",
+        "sender_id": "admin",
+        "sender_name": "VIDAI Support",
+        "message": reply.message,
+        "created_at": now
+    }
+    
+    await db.tickets.update_one(
+        {"id": ticket_id},
+        {
+            "$push": {"messages": message},
+            "$set": {"updated_at": now}
+        }
+    )
+    
+    return {"message": "Reply added successfully"}
+
+@api_router.put("/admin/tickets/{ticket_id}/status")
+async def admin_update_ticket_status(ticket_id: str, status: str = "", admin=Depends(get_admin_user)):
+    """Update ticket status by admin"""
+    if status not in ["open", "in_progress", "resolved", "closed"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    result = await db.tickets.update_one(
+        {"id": ticket_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    return {"message": "Status updated"}
 
 @api_router.get("/")
 async def root():

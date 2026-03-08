@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Package, ShoppingBag, LogOut, Plus, Edit2, Trash2, 
-  X, Image as ImageIcon, DollarSign, Boxes, Truck, ArrowLeft, Home
+  X, Image as ImageIcon, DollarSign, Boxes, Truck, ArrowLeft, Home, MessageCircle, Send
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,9 @@ const VendorDashboard = () => {
   const [activeTab, setActiveTab] = useState('products');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [replyMessage, setReplyMessage] = useState('');
   const [inventory, setInventory] = useState({ items: [], summary: {} });
   const [loading, setLoading] = useState(true);
   const [showProductModal, setShowProductModal] = useState(false);
@@ -56,10 +59,55 @@ const VendorDashboard = () => {
     }
   };
 
+  const fetchTickets = async () => {
+    try {
+      const res = await axios.get(`${API}/vendor/tickets`, authHeaders);
+      setTickets(res.data);
+    } catch (err) {
+      showToast('Failed to fetch tickets', 'error');
+    }
+  };
+
+  const handleTicketReply = async () => {
+    if (!replyMessage.trim() || !selectedTicket) return;
+    
+    try {
+      await axios.post(`${API}/vendor/tickets/${selectedTicket.id}/reply`, {
+        message: replyMessage
+      }, authHeaders);
+      
+      showToast('Reply sent');
+      setReplyMessage('');
+      
+      // Refresh tickets
+      const res = await axios.get(`${API}/vendor/tickets`, authHeaders);
+      setTickets(res.data);
+      const updated = res.data.find(t => t.id === selectedTicket.id);
+      if (updated) setSelectedTicket(updated);
+    } catch (err) {
+      showToast('Failed to send reply', 'error');
+    }
+  };
+
+  const updateTicketStatus = async (ticketId, status) => {
+    try {
+      await axios.put(`${API}/vendor/tickets/${ticketId}/status?status=${status}`, {}, authHeaders);
+      showToast('Status updated');
+      fetchTickets();
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket({ ...selectedTicket, status });
+      }
+    } catch (err) {
+      showToast('Failed to update status', 'error');
+    }
+  };
+
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     if (tabId === 'inventory') {
       fetchInventory();
+    } else if (tabId === 'tickets') {
+      fetchTickets();
     }
   };
 
@@ -97,6 +145,7 @@ const VendorDashboard = () => {
   const tabs = [
     { id: 'products', label: 'Products', icon: Package, count: products.length },
     { id: 'orders', label: 'Orders', icon: ShoppingBag, count: orders.length },
+    { id: 'tickets', label: 'Tickets', icon: MessageCircle, count: tickets.length },
     { id: 'inventory', label: 'Inventory', icon: Boxes }
   ];
 
@@ -205,6 +254,17 @@ const VendorDashboard = () => {
             )}
             {activeTab === 'inventory' && (
               <VendorInventoryTab inventory={inventory} />
+            )}
+            {activeTab === 'tickets' && (
+              <VendorTicketsTab 
+                tickets={tickets}
+                selectedTicket={selectedTicket}
+                setSelectedTicket={setSelectedTicket}
+                replyMessage={replyMessage}
+                setReplyMessage={setReplyMessage}
+                onReply={handleTicketReply}
+                onStatusUpdate={updateTicketStatus}
+              />
             )}
           </>
         )}
@@ -901,6 +961,172 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
           </div>
         </form>
       </div>
+    </div>
+  );
+};
+
+const VendorTicketsTab = ({ tickets, selectedTicket, setSelectedTicket, replyMessage, setReplyMessage, onReply, onStatusUpdate }) => {
+  const getStatusClass = (status) => {
+    const classes = {
+      open: 'bg-yellow-100 text-yellow-700',
+      in_progress: 'bg-blue-100 text-blue-700',
+      resolved: 'bg-green-100 text-green-700',
+      closed: 'bg-slate-100 text-slate-700'
+    };
+    return classes[status] || 'bg-slate-100 text-slate-700';
+  };
+
+  const getPriorityClass = (priority) => {
+    const classes = {
+      low: 'bg-slate-100 text-slate-600',
+      medium: 'bg-yellow-100 text-yellow-700',
+      high: 'bg-red-100 text-red-700'
+    };
+    return classes[priority] || 'bg-slate-100 text-slate-600';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleString();
+  };
+
+  if (selectedTicket) {
+    return (
+      <div>
+        <button
+          onClick={() => setSelectedTicket(null)}
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Tickets
+        </button>
+
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+                {selectedTicket.subject}
+              </h1>
+              <p className="text-slate-500 mt-1">
+                From: {selectedTicket.clinic_name} • Order #{selectedTicket.order_id?.slice(0, 8)}
+              </p>
+            </div>
+            <div className="flex gap-2 items-center">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityClass(selectedTicket.priority)}`}>
+                {selectedTicket.priority}
+              </span>
+              <select
+                value={selectedTicket.status}
+                onChange={(e) => onStatusUpdate(selectedTicket.id, e.target.value)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border-0 cursor-pointer ${getStatusClass(selectedTicket.status)}`}
+              >
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto">
+            {selectedTicket.messages?.map((msg, idx) => (
+              <div 
+                key={msg.id || idx}
+                className={`p-4 rounded-xl ${
+                  msg.sender_type === 'vendor' 
+                    ? 'bg-teal-50 ml-8' 
+                    : msg.sender_type === 'admin'
+                    ? 'bg-purple-50'
+                    : 'bg-slate-50 mr-8'
+                }`}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-slate-900">{msg.sender_name}</span>
+                  <span className="text-xs text-slate-500">{formatDate(msg.created_at)}</span>
+                </div>
+                <p className="text-slate-700">{msg.message}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Reply Box */}
+          {selectedTicket.status !== 'closed' && (
+            <div className="border-t border-slate-100 pt-4">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                  placeholder="Type your reply..."
+                  className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  onKeyPress={(e) => e.key === 'Enter' && onReply()}
+                />
+                <button
+                  onClick={onReply}
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Send
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            Support Tickets
+          </h1>
+          <p className="text-slate-500 mt-1">Manage customer support requests</p>
+        </div>
+      </div>
+
+      {tickets.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MessageCircle className="w-8 h-8 text-slate-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No tickets yet</h3>
+          <p className="text-slate-500">You'll see customer support requests here</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {tickets.map(ticket => (
+            <div 
+              key={ticket.id}
+              onClick={() => setSelectedTicket(ticket)}
+              className="bg-white rounded-xl border border-slate-100 p-4 hover:shadow-lg cursor-pointer transition-all"
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-slate-900">{ticket.subject}</h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    From: {ticket.clinic_name} • Order #{ticket.order_id?.slice(0, 8)}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-2">
+                    {ticket.messages?.length || 0} messages • Last updated {formatDate(ticket.updated_at)}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 items-end">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(ticket.status)}`}>
+                    {ticket.status.replace('_', ' ')}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-xs ${getPriorityClass(ticket.priority)}`}>
+                    {ticket.priority}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
