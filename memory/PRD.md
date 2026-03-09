@@ -4,19 +4,20 @@
 AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors for medical consumables, equipment, and genetic testing kits.
 
 ## User Personas
-1. **Admin** - Platform administrator managing vendors, clinics, assignments, product approvals, inventory, orders, enquiries, and settings
+1. **Admin** - Platform administrator managing vendors, clinics, product approvals, inventory, orders, enquiries, settings, and payment/email configuration
 2. **Vendor** - Medical supply companies listing products, managing inventory, and fulfilling orders with shipping details
-3. **Clinic** - IVF clinics purchasing products from assigned vendors and tracking order deliveries
+3. **Clinic** - IVF clinics purchasing products from marketplace and tracking order deliveries
 
 ## Core Requirements (Static)
 - Landing page with hero, stats, features, login modals, contact sales
 - Admin panel for user management
-- Vendor-to-clinic assignment system
 - Product catalog with approval workflow
 - Shopping cart and checkout with Stripe
 - Order management with tracking
 - Inventory and commission management
 - Contact enquiry management
+- Stripe payment configuration (sandbox/live)
+- SendGrid email notifications
 
 ## What's Been Implemented
 
@@ -25,7 +26,7 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - Admin dashboard (admin/vidai@01)
   - Vendors tab: CRUD operations
   - Clinics tab: CRUD with address capture
-  - Assignments tab: Assign vendors to clinics
+  - Assignments tab: Assign vendors to clinics (now optional)
   - Products tab: Approve/reject pending products
   - Marketplace link: View all approved products
 - Vendor portal
@@ -33,81 +34,67 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
   - Approval status display (Approved/Pending)
   - Orders view with status updates
 - Clinic marketplace
-  - View assigned vendors
-  - Browse products by vendor/category
+  - View all approved products (no vendor assignment required)
+  - Browse products by category
   - Shopping cart
   - Checkout with pre-filled address
   - Stripe payment integration
   - My Purchases view
   - Order history
 
-### Iteration 2 (Feb 21, 2026)
-- Product approval workflow (admin approves vendor products)
-- Admin marketplace view (read-only)
-- Clinic purchases list
-- Category filtering
-- Fixed Add Clinic modal scroll issue
+### Iteration 2-6 (Previously Completed)
+- Product approval workflow, admin marketplace view, clinic purchases
+- Inventory & Commission Module
+- Order Management & Tracking
+- Contact Sales form & Admin Enquiries
+- Landing Page Redesign
+- Clinic Dashboard with Overview, Notifications, Offers, Pricing Trends
 
-### Iteration 3 (Feb 21, 2026) - Inventory & Commission Module
-- Admin Inventory tab: View all products with stock levels, vendor filter
-- Admin Reports tab: Commission breakdown (VIDAI vs vendor earnings)
-- Vendor Inventory tab: View own products with commission details, potential earnings
-- Product Approval with commission rate setting (% during approval)
-- Commission calculations: VIDAI Commission + Vendor Amount per product
+### Iteration 7 - Admin Dashboard Enhancement (Feb 21, 2026)
+- Admin Overview tab with key metrics (revenue, orders, commission)
+- Recent orders and top vendors display
 
-### Iteration 4 (Feb 21, 2026) - Order Management & Tracking
-- Admin Orders tab: View ALL orders, filter by status/payment, summary cards
-- Admin Order Detail modal: Full order info with tracking
-- Vendor Orders: Status updates (pending→confirmed→processing→shipped→delivered)
-- Vendor Shipping modal: Add carrier, tracking number, estimated delivery
-- Clinic Track Orders: Progress tracker, tracking info, order details
-- Status timestamps: shipped_at, delivered_at automatically recorded
+### Iteration 8 - Support Ticket System (Feb 21, 2026)
+- Clinics can raise tickets on orders
+- Vendors can view and reply to tickets
+- Admin can oversee all tickets
+- Ticket status management (open/in_progress/resolved/closed)
 
-### Iteration 5 (Feb 21, 2026) - Contact Sales & Bug Fixes
+### Iteration 9 - Mar 9, 2026 - Critical Fixes & Settings Enhancement
 **Bug Fixes:**
-- Fixed "Vendor Gets" column showing $0.00 in Admin Inventory (now calculates dynamically)
-- Fixed Checkout page blank when returning from cancelled Stripe payment
+- Fixed cart page total price and currency display issue
+- Fixed addToCart function to properly handle vendor info
+- Added null-safety to price calculations
 
-**New Features - Contact Sales:**
-- Contact Sales modal on landing page with form (name, email, company, phone, message, enquiry type)
-- Admin Enquiries tab: View all contact enquiries with status management
-- Enquiry statuses: New → Contacted → Converted → Closed
-- Enquiry detail modal with notes functionality
-- Admin Settings tab: Configure contact email and notification preferences
-- Summary cards showing enquiry statistics
+**Product Approval Flow Simplified:**
+- Removed vendor assignment requirement
+- Approved products now visible to ALL clinics immediately
+- Clinics can order from any approved product
 
-### Iteration 6 (Feb 21, 2026) - Landing Page Redesign
-**UI Updates:**
-- Redesigned hero section to match user's reference design
-- Lab background image showing IVF scientists working with microscopes
-- Left-aligned content with "EMR INTEGRATED MARKETPLACE" tag
-- Headline with "AI-Powered" highlighted in coral (#E07A5F)
-- Device mockups (laptop + phone) positioned on right side showing marketplace interface
-- Phone mockup positioned in front of laptop for depth effect
-- Updated CTA buttons with shadows and hover effects
-- Fixed missing Search and ShoppingCart icon imports
+**Admin Settings Enhancement:**
+- **Stripe Settings Section:**
+  - Sandbox/Live mode toggle
+  - Sandbox publishable and secret key inputs
+  - Live publishable and secret key inputs
+  - Keys stored in database, not env vars
+  - GET/PUT /api/admin/settings/stripe
 
-### Iteration 7 (Feb 21, 2026) - Clinic Dashboard
-**New Feature - Clinic Dashboard:**
-- Comprehensive dashboard for clinics at `/clinic/dashboard`
-- **Overview Tab:** Order summary cards (total orders, pending, shipped, total spent), recent orders list, quick actions
-- **Notifications Tab:** Order status updates, new product alerts, system notifications
-- **Offers Tab:** Active promotional offers with coupon codes (bulk discounts, free shipping, vendor specials)
-- **Pricing Trends Tab:** Vendor price comparison table, category-wise price breakdown with min/avg/max prices
+- **SendGrid Email Settings Section:**
+  - Sandbox/Live mode toggle
+  - From Email and From Name configuration
+  - Sandbox and Live API key inputs
+  - GET/PUT /api/admin/settings/sendgrid
 
-**Backend Endpoints Added:**
-- `GET /api/clinic/dashboard/summary` - Dashboard summary stats
-- `GET /api/clinic/dashboard/notifications` - Order updates and new product alerts
-- `GET /api/clinic/dashboard/offers` - Active promotional offers
-- `GET /api/clinic/dashboard/pricing-trends` - Vendor and category pricing comparison
-
-**UI Flow Update:**
-- Clinics now redirected to dashboard after login instead of directly to marketplace
+**Email Notifications:**
+- Order confirmation emails sent upon successful payment
+- HTML email template with order details, items, prices
+- Email triggered from both checkout status and webhook handlers
 
 ## Tech Stack
 - Frontend: React + Tailwind CSS
 - Backend: FastAPI + MongoDB
-- Payment: Stripe
+- Payment: Stripe (configurable via admin settings)
+- Email: SendGrid (configurable via admin settings)
 - Auth: JWT
 
 ## Prioritized Backlog
@@ -116,7 +103,6 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - None remaining
 
 ### P1 (High)
-- Email notifications (integrate email service for enquiry notifications)
 - Inventory auto-deduction on purchase
 - Vendor analytics dashboard
 
@@ -144,6 +130,8 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - GET /api/admin/orders
 - GET/PUT/DELETE /api/admin/enquiries
 - GET/PUT /api/admin/settings
+- GET/PUT /api/admin/settings/stripe (NEW)
+- GET/PUT /api/admin/settings/sendgrid (NEW)
 
 ### Contact (Public)
 - POST /api/contact
@@ -158,8 +146,8 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 
 ### Clinic
 - POST /api/clinic/login
-- GET /api/clinic/assigned-vendors
-- GET /api/clinic/vendors/{id}/products
+- GET /api/clinic/all-products (all approved products, no vendor filter)
+- GET /api/clinic/products (with optional vendor/category filter)
 - GET/POST /api/clinic/orders
 - GET /api/clinic/purchases
 - POST /api/checkout/create-session
