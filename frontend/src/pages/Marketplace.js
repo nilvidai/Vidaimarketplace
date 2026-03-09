@@ -180,8 +180,9 @@ const Marketplace = () => {
     navigate('/');
   };
 
-  const handleAddToCart = (product) => {
-    addToCart(product, { id: product.vendor_id, company_name: product.vendor_name });
+  const handleAddToCart = (product, qty = 1) => {
+    const vendor = { id: product.vendor_id, company_name: product.vendor_name };
+    addToCart(product, vendor, qty);
     showToast(`${product.name} added to cart`);
   };
 
@@ -525,6 +526,11 @@ const ProductCard = ({ product, onAddToCart }) => {
     return gradients[category] || 'from-slate-100 to-slate-200';
   };
 
+  const handleAddClick = () => {
+    onAddToCart(product, quantity);
+    setQuantity(1);
+  };
+
   return (
     <div className="bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-square bg-slate-100 relative">
@@ -583,12 +589,7 @@ const ProductCard = ({ product, onAddToCart }) => {
               </button>
             </div>
             <button
-              onClick={() => {
-                for (let i = 0; i < quantity; i++) {
-                  onAddToCart(product);
-                }
-                setQuantity(1);
-              }}
+              onClick={handleAddClick}
               className="flex-1 btn-primary py-2 rounded-lg font-medium flex items-center justify-center gap-2"
               data-testid={`add-to-cart-${product.id}`}
             >

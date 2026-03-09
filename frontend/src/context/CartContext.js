@@ -35,7 +35,14 @@ export const CartProvider = ({ children }) => {
     }
   }, [selectedVendor]);
 
-  const addToCart = (product, quantity = 1) => {
+  const addToCart = (product, vendor = null, quantity = 1) => {
+    // Set selected vendor from the product or passed vendor
+    if (vendor) {
+      setSelectedVendor(vendor);
+    } else if (product.vendor_id && product.vendor_name) {
+      setSelectedVendor({ id: product.vendor_id, company_name: product.vendor_name });
+    }
+    
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.product.id === product.id);
       if (existingItem) {
@@ -73,7 +80,11 @@ export const CartProvider = ({ children }) => {
   };
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    return cart.reduce((total, item) => {
+      const price = item.product?.price || 0;
+      const qty = typeof item.quantity === 'number' ? item.quantity : 1;
+      return total + (price * qty);
+    }, 0);
   };
 
   const getCartCount = () => {

@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 class VIDAIMarketplaceAPITester:
-    def __init__(self, base_url="https://vidai-marketplace-1.preview.emergentagent.com"):
+    def __init__(self, base_url="https://clinic-shop-preview.preview.emergentagent.com"):
         self.base_url = base_url.rstrip('/')
         self.api_url = f"{self.base_url}/api"
         self.admin_token = None

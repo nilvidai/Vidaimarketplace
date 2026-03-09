@@ -104,7 +104,7 @@ const Cart = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-slate-900 truncate">{item.product.name}</h3>
                         <p className="text-sm text-slate-500">{item.product.category}</p>
-                        <p className="price-tag mt-1">${item.product.price.toFixed(2)}</p>
+                        <p className="price-tag mt-1">${(item.product.price || 0).toFixed(2)}</p>
                       </div>
 
                       <div className="flex items-center gap-4">
@@ -128,7 +128,7 @@ const Cart = () => {
 
                         <div className="text-right">
                           <p className="font-semibold text-slate-900">
-                            ${(item.product.price * item.quantity).toFixed(2)}
+                            ${((item.product.price || 0) * (item.quantity || 1)).toFixed(2)}
                           </p>
                         </div>
 

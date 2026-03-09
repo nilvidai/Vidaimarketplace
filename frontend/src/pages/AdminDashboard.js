@@ -4,7 +4,8 @@ import {
   Users, Building2, Link2, LogOut, Plus, Trash2, 
   CheckCircle, XCircle, ChevronRight, Package, ShoppingBag,
   Check, X, Image as ImageIcon, BarChart3, Boxes, DollarSign,
-  ClipboardList, Truck, Eye, MessageSquare, Settings, Mail, ArrowLeft, Home, Clock
+  ClipboardList, Truck, Eye, MessageSquare, Settings, Mail, ArrowLeft, Home, Clock,
+  CreditCard, Send, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -2156,12 +2157,29 @@ const EnquiriesTab = ({ enquiries, onView, onUpdateStatus, onDelete }) => {
 };
 
 const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
+  const [activeSection, setActiveSection] = useState('general');
   const [formData, setFormData] = useState({
     contact_email: settings?.contact_email || '',
     company_name: settings?.company_name || 'VIDAI',
     notify_on_enquiry: settings?.notify_on_enquiry ?? true
   });
+  const [stripeSettings, setStripeSettings] = useState({
+    stripe_mode: 'sandbox',
+    publishable_key_sandbox: '',
+    secret_key_sandbox: '',
+    publishable_key_live: '',
+    secret_key_live: ''
+  });
+  const [sendgridSettings, setSendgridSettings] = useState({
+    sendgrid_mode: 'sandbox',
+    api_key_sandbox: '',
+    api_key_live: '',
+    from_email: '',
+    from_name: 'VIDAI'
+  });
   const [saving, setSaving] = useState(false);
+  const [loadingStripe, setLoadingStripe] = useState(false);
+  const [loadingSendgrid, setLoadingSendgrid] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -2173,7 +2191,51 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
     }
   }, [settings]);
 
-  const handleSave = async () => {
+  useEffect(() => {
+    if (activeSection === 'stripe') {
+      fetchStripeSettings();
+    } else if (activeSection === 'sendgrid') {
+      fetchSendgridSettings();
+    }
+  }, [activeSection]);
+
+  const fetchStripeSettings = async () => {
+    setLoadingStripe(true);
+    try {
+      const res = await axios.get(`${API}/admin/settings/stripe`, authHeaders);
+      setStripeSettings({
+        stripe_mode: res.data.stripe_mode || 'sandbox',
+        publishable_key_sandbox: res.data.publishable_key_sandbox || '',
+        secret_key_sandbox: res.data.secret_key_sandbox || '',
+        publishable_key_live: res.data.publishable_key_live || '',
+        secret_key_live: res.data.secret_key_live || ''
+      });
+    } catch (err) {
+      console.error('Failed to fetch Stripe settings');
+    } finally {
+      setLoadingStripe(false);
+    }
+  };
+
+  const fetchSendgridSettings = async () => {
+    setLoadingSendgrid(true);
+    try {
+      const res = await axios.get(`${API}/admin/settings/sendgrid`, authHeaders);
+      setSendgridSettings({
+        sendgrid_mode: res.data.sendgrid_mode || 'sandbox',
+        api_key_sandbox: res.data.api_key_sandbox || '',
+        api_key_live: res.data.api_key_live || '',
+        from_email: res.data.from_email || '',
+        from_name: res.data.from_name || 'VIDAI'
+      });
+    } catch (err) {
+      console.error('Failed to fetch SendGrid settings');
+    } finally {
+      setLoadingSendgrid(false);
+    }
+  };
+
+  const handleSaveGeneral = async () => {
     setSaving(true);
     try {
       await axios.put(`${API}/admin/settings`, formData, authHeaders);
@@ -2186,73 +2248,392 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
     }
   };
 
+  const handleSaveStripe = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API}/admin/settings/stripe`, stripeSettings, authHeaders);
+      showToast('Stripe settings saved successfully');
+    } catch (err) {
+      showToast('Failed to save Stripe settings', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveSendgrid = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API}/admin/settings/sendgrid`, sendgridSettings, authHeaders);
+      showToast('SendGrid settings saved successfully');
+    } catch (err) {
+      showToast('Failed to save SendGrid settings', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sections = [
+    { id: 'general', label: 'General', icon: Settings },
+    { id: 'stripe', label: 'Stripe Payments', icon: CreditCard },
+    { id: 'sendgrid', label: 'Email (SendGrid)', icon: Send }
+  ];
+
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
           Settings
         </h1>
-        <p className="text-slate-500 mt-1">Configure admin settings and notifications</p>
+        <p className="text-slate-500 mt-1">Configure admin settings, payments, and email notifications</p>
       </div>
 
-      <div className="max-w-2xl">
-        <div className="bg-white rounded-xl border border-slate-100 p-6">
-          <h2 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Mail className="w-5 h-5 text-slate-500" />
-            Contact & Notifications
-          </h2>
+      <div className="flex gap-8">
+        {/* Sidebar */}
+        <div className="w-56">
+          <nav className="space-y-1">
+            {sections.map(section => (
+              <button
+                key={section.id}
+                onClick={() => setActiveSection(section.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeSection === section.id 
+                    ? 'bg-[#E07A5F] text-white' 
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+                data-testid={`settings-section-${section.id}`}
+              >
+                <section.icon className="w-5 h-5" />
+                <span className="font-medium">{section.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
 
-          <div className="space-y-6">
-            <div className="form-group">
-              <label className="form-label">Company Name</label>
-              <input
-                type="text"
-                value={formData.company_name}
-                onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-                className="form-input"
-                placeholder="VIDAI"
-                data-testid="settings-company-input"
-              />
+        {/* Content */}
+        <div className="flex-1 max-w-2xl">
+          {activeSection === 'general' && (
+            <div className="bg-white rounded-xl border border-slate-100 p-6">
+              <h2 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <Mail className="w-5 h-5 text-slate-500" />
+                Contact & Notifications
+              </h2>
+
+              <div className="space-y-6">
+                <div className="form-group">
+                  <label className="form-label">Company Name</label>
+                  <input
+                    type="text"
+                    value={formData.company_name}
+                    onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                    className="form-input"
+                    placeholder="VIDAI"
+                    data-testid="settings-company-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Contact Email</label>
+                  <input
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                    className="form-input"
+                    placeholder="sales@vidai.com"
+                    data-testid="settings-email-input"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Enquiry notifications will be sent to this email
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="notify_on_enquiry"
+                    checked={formData.notify_on_enquiry}
+                    onChange={(e) => setFormData({...formData, notify_on_enquiry: e.target.checked})}
+                    className="w-5 h-5 rounded border-slate-300 text-[#E07A5F] focus:ring-[#E07A5F]"
+                    data-testid="settings-notify-checkbox"
+                  />
+                  <label htmlFor="notify_on_enquiry" className="text-slate-700">
+                    Send email notification on new enquiries
+                  </label>
+                </div>
+
+                <button
+                  onClick={handleSaveGeneral}
+                  disabled={saving}
+                  className="btn-primary px-6 py-2.5 rounded-lg font-medium"
+                  data-testid="settings-save-btn"
+                >
+                  {saving ? 'Saving...' : 'Save Settings'}
+                </button>
+              </div>
             </div>
+          )}
 
-            <div className="form-group">
-              <label className="form-label">Contact Email</label>
-              <input
-                type="email"
-                value={formData.contact_email}
-                onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                className="form-input"
-                placeholder="sales@vidai.com"
-                data-testid="settings-email-input"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Enquiry notifications will be sent to this email
-              </p>
+          {activeSection === 'stripe' && (
+            <div className="bg-white rounded-xl border border-slate-100 p-6">
+              <h2 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-slate-500" />
+                Stripe Payment Configuration
+              </h2>
+
+              {loadingStripe ? (
+                <div className="flex justify-center py-8">
+                  <div className="spinner"></div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Mode Toggle */}
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <label className="form-label mb-3">Payment Mode</label>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => setStripeSettings({...stripeSettings, stripe_mode: 'sandbox'})}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                          stripeSettings.stripe_mode === 'sandbox'
+                            ? 'border-[#E07A5F] bg-orange-50 text-[#E07A5F]'
+                            : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                        data-testid="stripe-mode-sandbox"
+                      >
+                        {stripeSettings.stripe_mode === 'sandbox' ? (
+                          <ToggleRight className="w-5 h-5" />
+                        ) : (
+                          <ToggleLeft className="w-5 h-5" />
+                        )}
+                        <span className="font-medium">Sandbox (Test)</span>
+                      </button>
+                      <button
+                        onClick={() => setStripeSettings({...stripeSettings, stripe_mode: 'live'})}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                          stripeSettings.stripe_mode === 'live'
+                            ? 'border-green-500 bg-green-50 text-green-600'
+                            : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                        data-testid="stripe-mode-live"
+                      >
+                        {stripeSettings.stripe_mode === 'live' ? (
+                          <ToggleRight className="w-5 h-5" />
+                        ) : (
+                          <ToggleLeft className="w-5 h-5" />
+                        )}
+                        <span className="font-medium">Live (Production)</span>
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">
+                      {stripeSettings.stripe_mode === 'sandbox' 
+                        ? 'Test mode - Use Stripe test keys for development'
+                        : 'Live mode - Real payments will be processed'}
+                    </p>
+                  </div>
+
+                  {/* Sandbox Keys */}
+                  <div className={`space-y-4 ${stripeSettings.stripe_mode === 'live' ? 'opacity-50' : ''}`}>
+                    <h3 className="font-medium text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                      Sandbox Keys
+                    </h3>
+                    <div className="form-group">
+                      <label className="form-label">Publishable Key (Test)</label>
+                      <input
+                        type="text"
+                        value={stripeSettings.publishable_key_sandbox}
+                        onChange={(e) => setStripeSettings({...stripeSettings, publishable_key_sandbox: e.target.value})}
+                        className="form-input font-mono text-sm"
+                        placeholder="pk_test_..."
+                        data-testid="stripe-pk-sandbox"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Secret Key (Test)</label>
+                      <input
+                        type="password"
+                        value={stripeSettings.secret_key_sandbox}
+                        onChange={(e) => setStripeSettings({...stripeSettings, secret_key_sandbox: e.target.value})}
+                        className="form-input font-mono text-sm"
+                        placeholder="sk_test_..."
+                        data-testid="stripe-sk-sandbox"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Live Keys */}
+                  <div className={`space-y-4 ${stripeSettings.stripe_mode === 'sandbox' ? 'opacity-50' : ''}`}>
+                    <h3 className="font-medium text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      Live Keys
+                    </h3>
+                    <div className="form-group">
+                      <label className="form-label">Publishable Key (Live)</label>
+                      <input
+                        type="text"
+                        value={stripeSettings.publishable_key_live}
+                        onChange={(e) => setStripeSettings({...stripeSettings, publishable_key_live: e.target.value})}
+                        className="form-input font-mono text-sm"
+                        placeholder="pk_live_..."
+                        data-testid="stripe-pk-live"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Secret Key (Live)</label>
+                      <input
+                        type="password"
+                        value={stripeSettings.secret_key_live}
+                        onChange={(e) => setStripeSettings({...stripeSettings, secret_key_live: e.target.value})}
+                        className="form-input font-mono text-sm"
+                        placeholder="sk_live_..."
+                        data-testid="stripe-sk-live"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <button
+                      onClick={handleSaveStripe}
+                      disabled={saving}
+                      className="btn-primary px-6 py-2.5 rounded-lg font-medium"
+                      data-testid="stripe-save-btn"
+                    >
+                      {saving ? 'Saving...' : 'Save Stripe Settings'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+          )}
 
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="notify_on_enquiry"
-                checked={formData.notify_on_enquiry}
-                onChange={(e) => setFormData({...formData, notify_on_enquiry: e.target.checked})}
-                className="w-5 h-5 rounded border-slate-300 text-[#E07A5F] focus:ring-[#E07A5F]"
-                data-testid="settings-notify-checkbox"
-              />
-              <label htmlFor="notify_on_enquiry" className="text-slate-700">
-                Send email notification on new enquiries
-              </label>
+          {activeSection === 'sendgrid' && (
+            <div className="bg-white rounded-xl border border-slate-100 p-6">
+              <h2 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <Send className="w-5 h-5 text-slate-500" />
+                SendGrid Email Configuration
+              </h2>
+
+              {loadingSendgrid ? (
+                <div className="flex justify-center py-8">
+                  <div className="spinner"></div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Mode Toggle */}
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <label className="form-label mb-3">Email Mode</label>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => setSendgridSettings({...sendgridSettings, sendgrid_mode: 'sandbox'})}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                          sendgridSettings.sendgrid_mode === 'sandbox'
+                            ? 'border-[#E07A5F] bg-orange-50 text-[#E07A5F]'
+                            : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                        data-testid="sendgrid-mode-sandbox"
+                      >
+                        {sendgridSettings.sendgrid_mode === 'sandbox' ? (
+                          <ToggleRight className="w-5 h-5" />
+                        ) : (
+                          <ToggleLeft className="w-5 h-5" />
+                        )}
+                        <span className="font-medium">Sandbox (Test)</span>
+                      </button>
+                      <button
+                        onClick={() => setSendgridSettings({...sendgridSettings, sendgrid_mode: 'live'})}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                          sendgridSettings.sendgrid_mode === 'live'
+                            ? 'border-green-500 bg-green-50 text-green-600'
+                            : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                        data-testid="sendgrid-mode-live"
+                      >
+                        {sendgridSettings.sendgrid_mode === 'live' ? (
+                          <ToggleRight className="w-5 h-5" />
+                        ) : (
+                          <ToggleLeft className="w-5 h-5" />
+                        )}
+                        <span className="font-medium">Live (Production)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* From Email Settings */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="form-group">
+                      <label className="form-label">From Email</label>
+                      <input
+                        type="email"
+                        value={sendgridSettings.from_email}
+                        onChange={(e) => setSendgridSettings({...sendgridSettings, from_email: e.target.value})}
+                        className="form-input"
+                        placeholder="noreply@vidai.com"
+                        data-testid="sendgrid-from-email"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">From Name</label>
+                      <input
+                        type="text"
+                        value={sendgridSettings.from_name}
+                        onChange={(e) => setSendgridSettings({...sendgridSettings, from_name: e.target.value})}
+                        className="form-input"
+                        placeholder="VIDAI"
+                        data-testid="sendgrid-from-name"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Sandbox Keys */}
+                  <div className={`space-y-4 ${sendgridSettings.sendgrid_mode === 'live' ? 'opacity-50' : ''}`}>
+                    <h3 className="font-medium text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                      Sandbox API Key
+                    </h3>
+                    <div className="form-group">
+                      <label className="form-label">API Key (Test)</label>
+                      <input
+                        type="password"
+                        value={sendgridSettings.api_key_sandbox}
+                        onChange={(e) => setSendgridSettings({...sendgridSettings, api_key_sandbox: e.target.value})}
+                        className="form-input font-mono text-sm"
+                        placeholder="SG...."
+                        data-testid="sendgrid-key-sandbox"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Live Keys */}
+                  <div className={`space-y-4 ${sendgridSettings.sendgrid_mode === 'sandbox' ? 'opacity-50' : ''}`}>
+                    <h3 className="font-medium text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      Live API Key
+                    </h3>
+                    <div className="form-group">
+                      <label className="form-label">API Key (Live)</label>
+                      <input
+                        type="password"
+                        value={sendgridSettings.api_key_live}
+                        onChange={(e) => setSendgridSettings({...sendgridSettings, api_key_live: e.target.value})}
+                        className="form-input font-mono text-sm"
+                        placeholder="SG...."
+                        data-testid="sendgrid-key-live"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <button
+                      onClick={handleSaveSendgrid}
+                      disabled={saving}
+                      className="btn-primary px-6 py-2.5 rounded-lg font-medium"
+                      data-testid="sendgrid-save-btn"
+                    >
+                      {saving ? 'Saving...' : 'Save SendGrid Settings'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="btn-primary px-6 py-2.5 rounded-lg font-medium"
-              data-testid="settings-save-btn"
-            >
-              {saving ? 'Saving...' : 'Save Settings'}
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </div>

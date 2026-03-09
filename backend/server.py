@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, BackgroundTasks
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -13,6 +13,8 @@ from datetime import datetime, timezone, timedelta
 import bcrypt
 from jose import jwt, JWTError
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutSessionRequest
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Email, To, Content
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -37,6 +39,155 @@ security = HTTPBearer()
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# ==================== EMAIL SERVICE ====================
+
+async def _get_sendgrid_settings_from_db():
+    """Get SendGrid settings from database (internal helper)"""
+    settings = await db.settings.find_one({"type": "sendgrid"})
+    if not settings:
+        return None
+    return settings
+
+async def send_email(to_email: str, subject: str, html_content: str):
+    """Send email via SendGrid using settings from database"""
+    try:
+        settings = await _get_sendgrid_settings_from_db()
+        if not settings:
+            logger.warning("SendGrid settings not configured")
+            return False
+        
+        # Get API key based on mode
+        api_key = settings.get("api_key_live") if settings.get("sendgrid_mode") == "live" else settings.get("api_key_sandbox")
+        if not api_key:
+            logger.warning("SendGrid API key not configured")
+            return False
+        
+        from_email = settings.get("from_email", "noreply@vidai.com")
+        from_name = settings.get("from_name", "VIDAI")
+        
+        message = Mail(
+            from_email=Email(from_email, from_name),
+            to_emails=To(to_email),
+            subject=subject,
+            html_content=Content("text/html", html_content)
+        )
+        
+        sg = SendGridAPIClient(api_key)
+        response = sg.send(message)
+        logger.info(f"Email sent to {to_email}, status: {response.status_code}")
+        return response.status_code == 202
+    except Exception as e:
+        logger.error(f"Failed to send email: {str(e)}")
+        return False
+
+async def send_order_confirmation_email(order: dict, clinic_email: str, clinic_name: str):
+    """Send order confirmation email with invoice details"""
+    order_id = order.get("id", "")[:8].upper()
+    items_html = ""
+    
+    for item in order.get("items", []):
+        items_html += f"""
+        <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">{item.get('name', 'Product')}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">{item.get('quantity', 1)}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${item.get('price', 0):.2f}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${item.get('subtotal', 0):.2f}</td>
+        </tr>
+        """
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Order Confirmation - VIDAI</title>
+    </head>
+    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
+        <div style="max-width: 600px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #E07A5F, #D55B3E); padding: 30px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 28px;">VIDAI</h1>
+                <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">IVF Healthcare Marketplace</p>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 30px;">
+                <h2 style="color: #333; margin: 0 0 20px 0;">Order Confirmation</h2>
+                <p style="color: #666; line-height: 1.6;">
+                    Dear {clinic_name},<br><br>
+                    Thank you for your order! We're pleased to confirm that your order has been successfully placed.
+                </p>
+                
+                <!-- Order Info -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 5px 0;"><strong>Order ID:</strong></td>
+                            <td style="text-align: right; color: #E07A5F; font-weight: bold;">#{order_id}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;"><strong>Order Date:</strong></td>
+                            <td style="text-align: right;">{datetime.now().strftime('%B %d, %Y')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;"><strong>Status:</strong></td>
+                            <td style="text-align: right;"><span style="background: #28a745; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px;">Confirmed</span></td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- Order Items -->
+                <h3 style="color: #333; margin: 25px 0 15px 0;">Order Details</h3>
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #eee; border-radius: 8px;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 12px; text-align: left;">Product</th>
+                            <th style="padding: 12px; text-align: center;">Qty</th>
+                            <th style="padding: 12px; text-align: right;">Price</th>
+                            <th style="padding: 12px; text-align: right;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {items_html}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f8f9fa;">
+                            <td colspan="3" style="padding: 15px; text-align: right; font-weight: bold;">Total:</td>
+                            <td style="padding: 15px; text-align: right; font-weight: bold; color: #E07A5F; font-size: 18px;">${order.get('total_amount', 0):.2f}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                
+                <!-- Shipping Address -->
+                <h3 style="color: #333; margin: 25px 0 15px 0;">Shipping Address</h3>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0; color: #666; line-height: 1.6;">
+                        {order.get('shipping_address', 'N/A')}<br>
+                        {order.get('city', '')}, {order.get('state', '')} {order.get('zip_code', '')}<br>
+                        {order.get('country', '')}
+                    </p>
+                </div>
+                
+                <p style="color: #666; margin-top: 25px; line-height: 1.6;">
+                    You will receive another email when your order is shipped with tracking information.
+                </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: #333; padding: 20px; text-align: center;">
+                <p style="color: #999; margin: 0; font-size: 14px;">
+                    &copy; {datetime.now().year} VIDAI. All rights reserved.<br>
+                    <span style="color: #666; font-size: 12px;">This is an automated email, please do not reply.</span>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    subject = f"Order Confirmation - #{order_id} | VIDAI"
+    return await send_email(clinic_email, subject, html_content)
 
 # ==================== MODELS ====================
 
@@ -229,6 +380,24 @@ class AdminSettings(BaseModel):
     contact_email: Optional[str] = None
     company_name: Optional[str] = "VIDAI"
     notify_on_enquiry: bool = True
+
+class StripeSettings(BaseModel):
+    stripe_mode: str = "sandbox"  # sandbox or live
+    publishable_key_sandbox: Optional[str] = None
+    secret_key_sandbox: Optional[str] = None
+    publishable_key_live: Optional[str] = None
+    secret_key_live: Optional[str] = None
+
+class SendGridSettings(BaseModel):
+    sendgrid_mode: str = "sandbox"  # sandbox or live
+    api_key_sandbox: Optional[str] = None
+    api_key_live: Optional[str] = None
+    from_email: Optional[str] = None
+    from_name: Optional[str] = "VIDAI"
+
+class IntegrationSettings(BaseModel):
+    stripe: Optional[StripeSettings] = None
+    sendgrid: Optional[SendGridSettings] = None
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -852,6 +1021,96 @@ async def update_admin_settings(data: AdminSettings, admin=Depends(get_admin_use
     )
     return {"message": "Settings updated successfully"}
 
+# ==================== STRIPE SETTINGS ====================
+
+@api_router.get("/admin/settings/stripe")
+async def get_stripe_settings(admin=Depends(get_admin_user)):
+    """Get Stripe configuration settings"""
+    settings = await db.settings.find_one({"type": "stripe"}, {"_id": 0})
+    if not settings:
+        return {
+            "type": "stripe",
+            "stripe_mode": "sandbox",
+            "publishable_key_sandbox": "",
+            "secret_key_sandbox": "",
+            "publishable_key_live": "",
+            "secret_key_live": ""
+        }
+    # Mask secret keys for security (show only last 4 characters)
+    if settings.get("secret_key_sandbox"):
+        settings["secret_key_sandbox_masked"] = "••••" + settings["secret_key_sandbox"][-4:]
+    if settings.get("secret_key_live"):
+        settings["secret_key_live_masked"] = "••••" + settings["secret_key_live"][-4:]
+    return settings
+
+@api_router.put("/admin/settings/stripe")
+async def update_stripe_settings(data: StripeSettings, admin=Depends(get_admin_user)):
+    """Update Stripe configuration settings"""
+    settings_doc = {
+        "type": "stripe",
+        "stripe_mode": data.stripe_mode,
+        "publishable_key_sandbox": data.publishable_key_sandbox,
+        "secret_key_sandbox": data.secret_key_sandbox,
+        "publishable_key_live": data.publishable_key_live,
+        "secret_key_live": data.secret_key_live,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.settings.update_one(
+        {"type": "stripe"},
+        {"$set": settings_doc},
+        upsert=True
+    )
+    
+    # Update the global Stripe API key based on mode
+    global STRIPE_API_KEY
+    if data.stripe_mode == "live" and data.secret_key_live:
+        STRIPE_API_KEY = data.secret_key_live
+    elif data.secret_key_sandbox:
+        STRIPE_API_KEY = data.secret_key_sandbox
+    
+    return {"message": "Stripe settings updated successfully"}
+
+# ==================== SENDGRID SETTINGS ====================
+
+@api_router.get("/admin/settings/sendgrid")
+async def get_sendgrid_settings(admin=Depends(get_admin_user)):
+    """Get SendGrid configuration settings"""
+    settings = await db.settings.find_one({"type": "sendgrid"}, {"_id": 0})
+    if not settings:
+        return {
+            "type": "sendgrid",
+            "sendgrid_mode": "sandbox",
+            "api_key_sandbox": "",
+            "api_key_live": "",
+            "from_email": "",
+            "from_name": "VIDAI"
+        }
+    # Mask API keys for security
+    if settings.get("api_key_sandbox"):
+        settings["api_key_sandbox_masked"] = "••••" + settings["api_key_sandbox"][-4:]
+    if settings.get("api_key_live"):
+        settings["api_key_live_masked"] = "••••" + settings["api_key_live"][-4:]
+    return settings
+
+@api_router.put("/admin/settings/sendgrid")
+async def update_sendgrid_settings(data: SendGridSettings, admin=Depends(get_admin_user)):
+    """Update SendGrid configuration settings"""
+    settings_doc = {
+        "type": "sendgrid",
+        "sendgrid_mode": data.sendgrid_mode,
+        "api_key_sandbox": data.api_key_sandbox,
+        "api_key_live": data.api_key_live,
+        "from_email": data.from_email,
+        "from_name": data.from_name,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.settings.update_one(
+        {"type": "sendgrid"},
+        {"$set": settings_doc},
+        upsert=True
+    )
+    return {"message": "SendGrid settings updated successfully"}
+
 # ==================== VENDOR ROUTES ====================
 
 @api_router.post("/vendor/login")
@@ -1095,22 +1354,19 @@ async def get_vendor_products_for_clinic(vendor_id: str, user=Depends(get_clinic
 
 @api_router.get("/clinic/all-products")
 async def get_all_products_for_clinic(user=Depends(get_clinic_user)):
-    """Get all approved products from all assigned vendors with category and vendor info"""
-    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
-    if not clinic:
-        raise HTTPException(status_code=404, detail="Clinic not found")
-    
-    assigned_ids = clinic.get("assigned_vendors", [])
-    
-    # Get all approved products from assigned vendors
+    """Get all approved products for the clinic - no vendor assignment required"""
+    # Get ALL approved products from active vendors
     products = await db.products.find(
-        {"vendor_id": {"$in": assigned_ids}, "is_active": True, "is_approved": True},
+        {"is_active": True, "is_approved": True},
         {"_id": 0}
     ).to_list(1000)
     
+    # Get all active vendor IDs
+    vendor_ids = list(set(p["vendor_id"] for p in products if p.get("vendor_id")))
+    
     # Get vendor names
     vendors = await db.vendors.find(
-        {"id": {"$in": assigned_ids}, "is_active": True},
+        {"id": {"$in": vendor_ids}, "is_active": True},
         {"_id": 0, "id": 1, "company_name": 1}
     ).to_list(1000)
     vendor_map = {v["id"]: v["company_name"] for v in vendors}
@@ -1131,12 +1387,9 @@ async def get_all_products_for_clinic(user=Depends(get_clinic_user)):
 
 @api_router.get("/clinic/categories")
 async def get_clinic_categories(user=Depends(get_clinic_user)):
-    """Get all categories from approved products of assigned vendors"""
-    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
-    assigned_ids = clinic.get("assigned_vendors", [])
-    
+    """Get all categories from all approved products"""
     products = await db.products.find(
-        {"vendor_id": {"$in": assigned_ids}, "is_approved": True},
+        {"is_active": True, "is_approved": True},
         {"category": 1, "_id": 0}
     ).to_list(1000)
     categories = list(set(p["category"] for p in products if "category" in p))
@@ -1144,12 +1397,9 @@ async def get_clinic_categories(user=Depends(get_clinic_user)):
 
 @api_router.get("/clinic/products")
 async def get_all_clinic_products(user=Depends(get_clinic_user), vendor_id: Optional[str] = None, category: Optional[str] = None):
-    """Get all approved products from assigned vendors with optional filters"""
-    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
-    assigned_ids = clinic.get("assigned_vendors", [])
-    
-    query = {"vendor_id": {"$in": assigned_ids}, "is_active": True, "is_approved": True}
-    if vendor_id and vendor_id in assigned_ids:
+    """Get all approved products with optional filters"""
+    query = {"is_active": True, "is_approved": True}
+    if vendor_id:
         query["vendor_id"] = vendor_id
     if category:
         query["category"] = category
@@ -1202,10 +1452,9 @@ async def create_order(data: OrderCreate, user=Depends(get_clinic_user)):
     
     vendor_id = first_product["vendor_id"]
     
-    # Verify clinic has access to this vendor
-    clinic = await db.clinics.find_one({"id": user["clinic_id"]})
-    if vendor_id not in clinic.get("assigned_vendors", []):
-        raise HTTPException(status_code=403, detail="Vendor not assigned to your clinic")
+    # Verify the product is approved and active (no vendor assignment required)
+    if not first_product.get("is_approved") or not first_product.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Product is not available for purchase")
     
     # Build order items and calculate total
     order_items = []
@@ -1324,7 +1573,7 @@ async def create_checkout_session(data: CheckoutRequest, request: Request, user=
     return {"checkout_url": session.url, "session_id": session.session_id}
 
 @api_router.get("/checkout/status/{session_id}")
-async def get_checkout_status(session_id: str, request: Request, user=Depends(get_clinic_user)):
+async def get_checkout_status(session_id: str, request: Request, user=Depends(get_clinic_user), background_tasks: BackgroundTasks = None):
     webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
     stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
     
@@ -1346,6 +1595,15 @@ async def get_checkout_status(session_id: str, request: Request, user=Depends(ge
                     {"id": order["id"]},
                     {"$set": {"payment_status": "paid", "status": "confirmed"}}
                 )
+                
+                # Send order confirmation email
+                clinic = await db.clinics.find_one({"id": order["clinic_id"]})
+                if clinic:
+                    clinic_email = clinic.get("email", "")
+                    clinic_name = clinic.get("name", "Customer")
+                    # Use background task to send email without blocking
+                    import asyncio
+                    asyncio.create_task(send_order_confirmation_email(order, clinic_email, clinic_name))
     
     return {
         "status": status.status,
@@ -1378,6 +1636,16 @@ async def stripe_webhook(request: Request):
                     {"session_id": session_id},
                     {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
                 )
+                
+                # Send order confirmation email
+                order = await db.orders.find_one({"id": order_id})
+                if order:
+                    clinic = await db.clinics.find_one({"id": order["clinic_id"]})
+                    if clinic:
+                        clinic_email = clinic.get("email", "")
+                        clinic_name = clinic.get("name", "Customer")
+                        import asyncio
+                        asyncio.create_task(send_order_confirmation_email(order, clinic_email, clinic_name))
         
         return {"status": "success"}
     except Exception as e:
