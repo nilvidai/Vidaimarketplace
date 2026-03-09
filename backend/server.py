@@ -40,6 +40,22 @@ security = HTTPBearer()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# ==================== STRIPE HELPER ====================
+
+async def get_active_stripe_key():
+    """Get the active Stripe secret key from database or environment"""
+    # First try database settings
+    settings = await db.settings.find_one({"type": "stripe"})
+    if settings:
+        mode = settings.get("stripe_mode", "sandbox")
+        if mode == "live" and settings.get("secret_key_live"):
+            return settings["secret_key_live"]
+        elif settings.get("secret_key_sandbox"):
+            return settings["secret_key_sandbox"]
+    
+    # Fallback to environment variable
+    return STRIPE_API_KEY
+
 # ==================== EMAIL SERVICE ====================
 
 async def _get_sendgrid_settings_from_db():
@@ -1531,10 +1547,15 @@ async def create_checkout_session(data: CheckoutRequest, request: Request, user=
     if order["payment_status"] == "paid":
         raise HTTPException(status_code=400, detail="Order already paid")
     
+    # Get active Stripe key from database or environment
+    stripe_key = await get_active_stripe_key()
+    if not stripe_key:
+        raise HTTPException(status_code=500, detail="Stripe is not configured. Please configure Stripe keys in Admin Settings.")
+    
     host_url = data.origin_url.rstrip('/')
     webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
     
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    stripe_checkout = StripeCheckout(api_key=stripe_key, webhook_url=webhook_url)
     
     success_url = f"{host_url}/marketplace/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{host_url}/marketplace/checkout?order_id={data.order_id}"
@@ -1574,8 +1595,13 @@ async def create_checkout_session(data: CheckoutRequest, request: Request, user=
 
 @api_router.get("/checkout/status/{session_id}")
 async def get_checkout_status(session_id: str, request: Request, user=Depends(get_clinic_user), background_tasks: BackgroundTasks = None):
+    # Get active Stripe key
+    stripe_key = await get_active_stripe_key()
+    if not stripe_key:
+        raise HTTPException(status_code=500, detail="Stripe is not configured")
+    
     webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    stripe_checkout = StripeCheckout(api_key=stripe_key, webhook_url=webhook_url)
     
     status = await stripe_checkout.get_checkout_status(session_id)
     
@@ -1617,8 +1643,13 @@ async def stripe_webhook(request: Request):
     body = await request.body()
     signature = request.headers.get("Stripe-Signature", "")
     
+    # Get active Stripe key
+    stripe_key = await get_active_stripe_key()
+    if not stripe_key:
+        return {"status": "error", "message": "Stripe is not configured"}
+    
     webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    stripe_checkout = StripeCheckout(api_key=stripe_key, webhook_url=webhook_url)
     
     try:
         webhook_response = await stripe_checkout.handle_webhook(body, signature)
