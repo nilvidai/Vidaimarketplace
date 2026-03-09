@@ -2251,10 +2251,13 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
   const handleSaveStripe = async () => {
     setSaving(true);
     try {
+      console.log('Saving Stripe settings...', stripeSettings);
+      console.log('Auth headers:', authHeaders);
       await axios.put(`${API}/admin/settings/stripe`, stripeSettings, authHeaders);
       showToast('Stripe settings saved successfully');
     } catch (err) {
-      showToast('Failed to save Stripe settings', 'error');
+      console.error('Stripe save error:', err.response?.data || err.message);
+      showToast(`Failed to save Stripe settings: ${err.response?.data?.detail || err.message}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -2263,10 +2266,12 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
   const handleSaveSendgrid = async () => {
     setSaving(true);
     try {
+      console.log('Saving SendGrid settings...', sendgridSettings);
       await axios.put(`${API}/admin/settings/sendgrid`, sendgridSettings, authHeaders);
       showToast('SendGrid settings saved successfully');
     } catch (err) {
-      showToast('Failed to save SendGrid settings', 'error');
+      console.error('SendGrid save error:', err.response?.data || err.message);
+      showToast(`Failed to save SendGrid settings: ${err.response?.data?.detail || err.message}`, 'error');
     } finally {
       setSaving(false);
     }
