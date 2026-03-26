@@ -90,8 +90,23 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - HTML email template with order details, items, prices
 - Email triggered from both checkout status and webhook handlers
 
+### Iteration 10 - Mar 26, 2026 - Dashboard UX & Currency Fixes
+**Bug Fixes:**
+- Fixed "formatPrice is not defined" runtime error in Admin Dashboard
+- Passed formatPrice prop to all child components (ProductsApprovalTab, AdminOrdersTab, InventoryTab, ReportsTab, OrderDetailModal)
+- Fixed hardcoded $ signs in Orders.js, AdminMarketplace.js, VendorDashboard.js, PaymentSuccess.js
+
+**Clickable Stat Cards:**
+- Admin Dashboard: All stat cards clickable (Revenue→Orders, Vendors→Vendors tab, etc.)
+- Clinic Dashboard: All stat cards clickable (navigate to /marketplace/orders)
+- VendorDashboard: Added formatPrice prop to ProductsTab, OrdersTab, VendorInventoryTab
+
+**Currency Consistency:**
+- All pages now use formatPrice from CurrencyContext
+- INR (₹) displays correctly across all dashboards and order pages
+
 ## Tech Stack
-- Frontend: React + Tailwind CSS
+- Frontend: React + Tailwind CSS + CurrencyContext for global formatting
 - Backend: FastAPI + MongoDB
 - Payment: Stripe (configurable via admin settings)
 - Email: SendGrid (configurable via admin settings)
@@ -111,6 +126,8 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - Bulk order discounts
 - Product search
 - Vendor ratings/reviews
+- Refactor server.py into modular routers
+- Break down large React components (AdminDashboard.js, Marketplace.js)
 
 ## Test Credentials
 - Admin: admin / vidai@01
@@ -130,8 +147,8 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - GET /api/admin/orders
 - GET/PUT/DELETE /api/admin/enquiries
 - GET/PUT /api/admin/settings
-- GET/PUT /api/admin/settings/stripe (NEW)
-- GET/PUT /api/admin/settings/sendgrid (NEW)
+- GET/PUT /api/admin/settings/stripe
+- GET/PUT /api/admin/settings/sendgrid
 
 ### Contact (Public)
 - POST /api/contact
