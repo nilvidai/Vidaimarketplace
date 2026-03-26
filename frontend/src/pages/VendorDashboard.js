@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -23,6 +24,7 @@ const VendorDashboard = () => {
   const [toast, setToast] = useState(null);
   
   const { user, logout, getToken } = useAuth();
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
 
   const authHeaders = { headers: { Authorization: `Bearer ${getToken()}` } };
@@ -360,7 +362,7 @@ const ProductsTab = ({ products, categories, onAdd, onEdit, onDelete }) => (
               <h3 className="font-semibold text-slate-900 mb-1 truncate">{product.name}</h3>
               <p className="text-sm text-slate-500 mb-3 line-clamp-2">{product.description}</p>
               <div className="flex items-center justify-between">
-                <span className="price-tag text-lg">${product.price?.toFixed(2)}</span>
+                <span className="price-tag text-lg">{formatPrice(product.price)}</span>
                 <span className="text-xs text-slate-500">Stock: {product.stock_quantity}</span>
               </div>
               <div className="flex gap-2 mt-4">
@@ -435,7 +437,7 @@ const OrdersTab = ({ orders, onUpdateStatus, onUpdateShipping, authHeaders }) =>
                 <div>
                   <div className="text-sm text-slate-500">Order #{order.id.slice(0, 8)}</div>
                   <div className="text-lg font-semibold text-slate-900 mt-1">
-                    ${order.total_amount.toFixed(2)}
+                    {formatPrice(order.total_amount)}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -463,7 +465,7 @@ const OrdersTab = ({ orders, onUpdateStatus, onUpdateShipping, authHeaders }) =>
                   {order.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between text-sm">
                       <span className="text-slate-600">{item.name} x {item.quantity}</span>
-                      <span className="text-slate-900">${item.subtotal.toFixed(2)}</span>
+                      <span className="text-slate-900">{formatPrice(item.subtotal)}</span>
                     </div>
                   ))}
                 </div>
@@ -691,11 +693,11 @@ const VendorInventoryTab = ({ inventory }) => {
         </div>
         <div className="bg-white rounded-xl border border-slate-100 p-6">
           <div className="text-sm text-slate-500 mb-1">Stock Value</div>
-          <div className="text-3xl font-bold text-slate-900">${summary.total_stock_value?.toFixed(2) || '0.00'}</div>
+          <div className="text-3xl font-bold text-slate-900">{formatPrice(summary.total_stock_value || 0)}</div>
         </div>
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
           <div className="text-sm opacity-90 mb-1">Your Potential Earnings</div>
-          <div className="text-3xl font-bold">${summary.total_vendor_earnings?.toFixed(2) || '0.00'}</div>
+          <div className="text-3xl font-bold">{formatPrice(summary.total_vendor_earnings || 0)}</div>
         </div>
       </div>
 
@@ -740,7 +742,7 @@ const VendorInventoryTab = ({ inventory }) => {
                 <tr key={item.product_id} className="table-row-hover">
                   <td className="font-medium text-slate-900">{item.product_name}</td>
                   <td className="text-slate-500">{item.sku}</td>
-                  <td className="price-tag">${item.price?.toFixed(2)}</td>
+                  <td className="price-tag">{formatPrice(item.price)}</td>
                   <td>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       item.stock_quantity > 10 ? 'badge-success' : 
@@ -757,7 +759,7 @@ const VendorInventoryTab = ({ inventory }) => {
                     </span>
                   </td>
                   <td className="text-slate-500">{item.commission_rate}%</td>
-                  <td className="text-green-600 font-medium">${item.vendor_amount?.toFixed(2)}</td>
+                  <td className="text-green-600 font-medium">{formatPrice(item.vendor_amount)}</td>
                   <td className="font-medium text-slate-900">${item.potential_earnings?.toFixed(2)}</td>
                 </tr>
               ))

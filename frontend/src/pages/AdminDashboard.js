@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -41,6 +42,7 @@ const AdminDashboard = () => {
   const [toast, setToast] = useState(null);
   
   const { user, logout, getToken } = useAuth();
+  const { formatPrice, refreshCurrency } = useCurrency();
   const navigate = useNavigate();
 
   const authHeaders = { headers: { Authorization: `Bearer ${getToken()}` } };
@@ -386,7 +388,7 @@ const AdminDashboard = () => {
                       </div>
                       <span className="text-xs text-green-500 font-medium">Revenue</span>
                     </div>
-                    <div className="text-3xl font-bold text-slate-900">${dashboardStats.summary.total_revenue.toLocaleString()}</div>
+                    <div className="text-3xl font-bold text-slate-900">{formatPrice(dashboardStats.summary.total_revenue)}</div>
                     <div className="text-sm text-slate-500 mt-1">Total Revenue</div>
                   </div>
 
@@ -431,7 +433,7 @@ const AdminDashboard = () => {
                       <DollarSign className="w-8 h-8 opacity-80" />
                       <span className="text-xs bg-white/20 px-2 py-1 rounded-full">Commission</span>
                     </div>
-                    <div className="text-3xl font-bold">${dashboardStats.summary.total_commission.toLocaleString()}</div>
+                    <div className="text-3xl font-bold">{formatPrice(dashboardStats.summary.total_commission)}</div>
                     <div className="text-sm opacity-80 mt-1">Total Earned</div>
                   </div>
 
@@ -492,7 +494,7 @@ const AdminDashboard = () => {
                                 <div className="text-sm text-slate-500">{order.clinic_name}</div>
                               </div>
                               <div className="text-right">
-                                <div className="font-semibold text-slate-900">${order.total_amount.toFixed(2)}</div>
+                                <div className="font-semibold text-slate-900">{formatPrice(order.total_amount)}</div>
                                 <span className={`text-xs px-2 py-0.5 rounded-full ${
                                   order.status === 'delivered' ? 'bg-green-100 text-green-700' :
                                   order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
@@ -538,7 +540,7 @@ const AdminDashboard = () => {
                               <div className="text-sm text-slate-500">{vendor.order_count} orders</div>
                             </div>
                             <div className="text-right">
-                              <div className="font-semibold text-slate-900">${vendor.total_sales.toLocaleString()}</div>
+                              <div className="font-semibold text-slate-900">{formatPrice(vendor.total_sales)}</div>
                             </div>
                           </div>
                         ))
@@ -900,7 +902,7 @@ const ProductsApprovalTab = ({ products, onApprove }) => (
               <h3 className="font-semibold text-slate-900 mb-1">{product.name}</h3>
               <p className="text-sm text-slate-500 mb-3 line-clamp-2">{product.description}</p>
               <div className="flex items-center justify-between mb-4">
-                <span className="price-tag text-lg">${product.price?.toFixed(2)}</span>
+                <span className="price-tag text-lg">{formatPrice(product.price)}</span>
                 <span className="text-xs text-slate-500">SKU: {product.sku}</span>
               </div>
               <button
@@ -963,7 +965,7 @@ const InventoryTab = ({ inventory, vendors }) => {
         </div>
         <div className="bg-white rounded-xl border border-slate-100 p-6">
           <div className="text-sm text-slate-500 mb-1">Total Stock Value</div>
-          <div className="text-3xl font-bold text-[#E07A5F]">${totalValue.toFixed(2)}</div>
+          <div className="text-3xl font-bold text-[#E07A5F]">{formatPrice(totalValue)}</div>
         </div>
       </div>
 
@@ -995,7 +997,7 @@ const InventoryTab = ({ inventory, vendors }) => {
                   <td className="font-medium text-slate-900">{item.product_name}</td>
                   <td className="text-slate-500">{item.sku}</td>
                   <td className="text-slate-500">{item.vendor_name}</td>
-                  <td className="price-tag">${item.price?.toFixed(2)}</td>
+                  <td className="price-tag">{formatPrice(item.price)}</td>
                   <td>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       item.stock_quantity > 10 ? 'badge-success' : 
@@ -1012,7 +1014,7 @@ const InventoryTab = ({ inventory, vendors }) => {
                     </span>
                   </td>
                   <td className="text-slate-500">{item.commission_rate}%</td>
-                  <td className="text-green-600 font-medium">${item.vendor_amount?.toFixed(2)}</td>
+                  <td className="text-green-600 font-medium">{formatPrice(item.vendor_amount)}</td>
                 </tr>
               ))
             )}
@@ -1049,15 +1051,15 @@ const ReportsTab = ({ report }) => {
         </div>
         <div className="bg-white rounded-xl border border-slate-100 p-6">
           <div className="text-sm text-slate-500 mb-1">Total Product Value</div>
-          <div className="text-3xl font-bold text-slate-900">${report.total_product_value?.toFixed(2)}</div>
+          <div className="text-3xl font-bold text-slate-900">{formatPrice(report.total_product_value)}</div>
         </div>
         <div className="bg-gradient-to-br from-[#E07A5F] to-[#D0694E] rounded-xl p-6 text-white">
           <div className="text-sm opacity-90 mb-1">VIDAI Commission</div>
-          <div className="text-3xl font-bold">${report.total_vidai_commission?.toFixed(2)}</div>
+          <div className="text-3xl font-bold">{formatPrice(report.total_vidai_commission)}</div>
         </div>
         <div className="bg-white rounded-xl border border-slate-100 p-6">
           <div className="text-sm text-slate-500 mb-1">Vendor Earnings</div>
-          <div className="text-3xl font-bold text-green-600">${report.total_vendor_amount?.toFixed(2)}</div>
+          <div className="text-3xl font-bold text-green-600">{formatPrice(report.total_vendor_amount)}</div>
         </div>
       </div>
 
@@ -1090,9 +1092,9 @@ const ReportsTab = ({ report }) => {
                   <td className="font-medium text-slate-900">{vendor.vendor_name}</td>
                   <td>{vendor.product_count}</td>
                   <td>{vendor.total_stock} units</td>
-                  <td>${vendor.total_value?.toFixed(2)}</td>
-                  <td className="text-[#E07A5F] font-medium">${vendor.vidai_commission?.toFixed(2)}</td>
-                  <td className="text-green-600 font-medium">${vendor.vendor_amount?.toFixed(2)}</td>
+                  <td>{formatPrice(vendor.total_value)}</td>
+                  <td className="text-[#E07A5F] font-medium">{formatPrice(vendor.vidai_commission)}</td>
+                  <td className="text-green-600 font-medium">{formatPrice(vendor.vendor_amount)}</td>
                 </tr>
               ))
             )}
@@ -1670,7 +1672,7 @@ const ApprovalModal = ({ isOpen, onClose, product, onApprove }) => {
               <div>
                 <h3 className="font-semibold text-slate-900">{product.name}</h3>
                 <p className="text-sm text-slate-500">{product.vendor_name}</p>
-                <p className="text-lg font-bold text-[#E07A5F] mt-1">${price.toFixed(2)}</p>
+                <p className="text-lg font-bold text-[#E07A5F] mt-1">{formatPrice(price)}</p>
               </div>
             </div>
           </div>
@@ -1693,7 +1695,7 @@ const ApprovalModal = ({ isOpen, onClose, product, onApprove }) => {
           <div className="bg-slate-50 rounded-xl p-4 space-y-3">
             <div className="flex justify-between">
               <span className="text-slate-600">Product Price</span>
-              <span className="font-medium">${price.toFixed(2)}</span>
+              <span className="font-medium">{formatPrice(price)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">VIDAI Commission ({commissionRate}%)</span>
@@ -1793,7 +1795,7 @@ const AdminOrdersTab = ({ orders, onViewOrder }) => {
         </div>
         <div className="bg-white rounded-xl border border-slate-100 p-6">
           <div className="text-sm text-slate-500 mb-1">Total Revenue</div>
-          <div className="text-3xl font-bold text-[#E07A5F]">${totalRevenue.toFixed(2)}</div>
+          <div className="text-3xl font-bold text-[#E07A5F]">{formatPrice(totalRevenue)}</div>
         </div>
       </div>
 
@@ -1825,7 +1827,7 @@ const AdminOrdersTab = ({ orders, onViewOrder }) => {
                   <td className="font-medium text-slate-900">#{order.id.slice(0, 8)}</td>
                   <td>{order.clinic_name}</td>
                   <td>{order.vendor_name}</td>
-                  <td className="price-tag">${order.total_amount?.toFixed(2)}</td>
+                  <td className="price-tag">{formatPrice(order.total_amount)}</td>
                   <td>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       order.payment_status === 'paid' ? 'badge-success' : 'badge-warning'
@@ -1903,7 +1905,7 @@ const OrderDetailModal = ({ isOpen, onClose, order }) => {
             </div>
             <div className="flex-1 bg-slate-50 rounded-xl p-4">
               <div className="text-sm text-slate-500 mb-1">Total Amount</div>
-              <div className="font-semibold text-[#E07A5F]">${order.total_amount?.toFixed(2)}</div>
+              <div className="font-semibold text-[#E07A5F]">{formatPrice(order.total_amount)}</div>
             </div>
           </div>
 
@@ -1930,7 +1932,7 @@ const OrderDetailModal = ({ isOpen, onClose, order }) => {
               {order.items?.map((item, idx) => (
                 <div key={idx} className="flex justify-between">
                   <span className="text-slate-600">{item.name} x {item.quantity}</span>
-                  <span className="font-medium text-slate-900">${item.subtotal?.toFixed(2)}</span>
+                  <span className="font-medium text-slate-900">{formatPrice(item.subtotal)}</span>
                 </div>
               ))}
             </div>

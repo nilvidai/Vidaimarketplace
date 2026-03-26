@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -21,6 +22,7 @@ const ClinicDashboard = () => {
   
   const navigate = useNavigate();
   const { user, getToken, logout } = useAuth();
+  const { formatPrice } = useCurrency();
 
   const authHeaders = { headers: { Authorization: `Bearer ${getToken()}` } };
 
@@ -247,7 +249,7 @@ const ClinicDashboard = () => {
                       </div>
                       <span className="text-xs text-slate-400">Lifetime</span>
                     </div>
-                    <div className="text-3xl font-bold text-slate-900">${summary.total_spent.toLocaleString()}</div>
+                    <div className="text-3xl font-bold text-slate-900">{formatPrice(summary.total_spent)}</div>
                     <div className="text-sm text-slate-500 mt-1">Total Spent</div>
                   </div>
                 </div>
@@ -299,7 +301,7 @@ const ClinicDashboard = () => {
                             </div>
                             <div className="text-right">
                               <div className="font-semibold text-slate-900">
-                                ${order.total_amount.toFixed(2)}
+                                {formatPrice(order.total_amount)}
                               </div>
                               <div className={`text-xs px-2 py-0.5 rounded-full inline-block ${
                                 order.status === 'delivered' ? 'bg-green-100 text-green-700' :
@@ -530,10 +532,10 @@ const ClinicDashboard = () => {
                             </td>
                             <td className="px-6 py-4 text-center text-slate-600">{vendor.total_products}</td>
                             <td className="px-6 py-4 text-center">
-                              <span className="font-semibold text-slate-900">${vendor.avg_price.toLocaleString()}</span>
+                              <span className="font-semibold text-slate-900">{formatPrice(vendor.avg_price)}</span>
                             </td>
-                            <td className="px-6 py-4 text-center text-green-600">${vendor.min_price.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-center text-slate-600">${vendor.max_price.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-center text-green-600">{formatPrice(vendor.min_price)}</td>
+                            <td className="px-6 py-4 text-center text-slate-600">{formatPrice(vendor.max_price)}</td>
                             <td className="px-6 py-4 text-right">
                               <button 
                                 onClick={() => navigate('/marketplace')}
@@ -573,15 +575,15 @@ const ClinicDashboard = () => {
                         <div className="grid grid-cols-3 gap-4">
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
                             <div className="text-xs text-slate-500 mb-1">Min</div>
-                            <div className="font-semibold text-green-600">${cat.min_price.toLocaleString()}</div>
+                            <div className="font-semibold text-green-600">{formatPrice(cat.min_price)}</div>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
                             <div className="text-xs text-slate-500 mb-1">Average</div>
-                            <div className="font-semibold text-slate-900">${cat.avg_price.toLocaleString()}</div>
+                            <div className="font-semibold text-slate-900">{formatPrice(cat.avg_price)}</div>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
                             <div className="text-xs text-slate-500 mb-1">Max</div>
-                            <div className="font-semibold text-slate-600">${cat.max_price.toLocaleString()}</div>
+                            <div className="font-semibold text-slate-600">{formatPrice(cat.max_price)}</div>
                           </div>
                         </div>
                       </div>
@@ -634,7 +636,7 @@ const ClinicDashboard = () => {
             
             {selectedOffer.min_order_amount && (
               <div className="text-sm text-slate-500 mb-4">
-                Minimum order: ${selectedOffer.min_order_amount.toLocaleString()}
+                Minimum order: {formatPrice(selectedOffer.min_order_amount)}
               </div>
             )}
             

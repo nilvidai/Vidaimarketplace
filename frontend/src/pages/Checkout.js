@@ -7,6 +7,7 @@ import {
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -15,6 +16,7 @@ const Checkout = () => {
   const [searchParams] = useSearchParams();
   const { user, getToken } = useAuth();
   const { cart, selectedVendor, getCartTotal, clearCart } = useCart();
+  const { formatPrice } = useCurrency();
   
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -323,7 +325,7 @@ const Checkout = () => {
                       <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
                     </div>
                     <p className="text-sm font-medium text-slate-900">
-                      ${(item.subtotal || item.price * item.quantity).toFixed(2)}
+                      {formatPrice(item.subtotal || item.price * item.quantity)}
                     </p>
                   </div>
                 ))}
@@ -334,7 +336,7 @@ const Checkout = () => {
               <div className="space-y-2 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Subtotal</span>
-                  <span className="text-slate-900">${orderTotal.toFixed(2)}</span>
+                  <span className="text-slate-900">{formatPrice(orderTotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Shipping</span>
@@ -351,7 +353,7 @@ const Checkout = () => {
               <div className="flex justify-between mb-6">
                 <span className="font-semibold text-slate-900">Total</span>
                 <span className="font-bold text-2xl text-[#E07A5F]">
-                  ${orderTotal.toFixed(2)}
+                  {formatPrice(orderTotal)}
                 </span>
               </div>
 
@@ -369,7 +371,7 @@ const Checkout = () => {
                 ) : (
                   <>
                     <CreditCard className="w-5 h-5" />
-                    Pay ${orderTotal.toFixed(2)}
+                    Pay {formatPrice(orderTotal)}
                   </>
                 )}
               </button>

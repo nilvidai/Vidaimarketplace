@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, ShoppingBag, Home } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -12,6 +13,7 @@ const Orders = () => {
   
   const navigate = useNavigate();
   const { user, getToken } = useAuth();
+  const { formatPrice } = useCurrency();
 
   const authHeaders = { headers: { Authorization: `Bearer ${getToken()}` } };
 
@@ -168,7 +170,7 @@ const Orders = () => {
                     <div className="text-right">
                       <div className="text-sm text-slate-500">Total</div>
                       <div className="text-xl font-bold text-[#E07A5F]">
-                        ${order.total_amount.toFixed(2)}
+                        {formatPrice(order.total_amount)}
                       </div>
                     </div>
                   </div>

@@ -616,18 +616,10 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-slate-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-center items-center">
             <span className="text-slate-400 text-sm">
               © 2024 VIDAI Marketplace. All rights reserved.
             </span>
-            <a
-              href="https://app.emergent.sh"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-slate-400 hover:text-white text-sm flex items-center gap-2 transition-colors"
-            >
-              Made with Emergent
-            </a>
           </div>
         </div>
       </footer>
