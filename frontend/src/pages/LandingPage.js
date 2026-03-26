@@ -501,41 +501,42 @@ const LandingPage = () => {
             }}
           />
           
-          {/* Invisible clickable overlays positioned exactly over the image buttons */}
-          <button
-            onClick={handleMarketplaceClick}
-            className="absolute cursor-pointer"
-            data-testid="hero-explore-btn"
+          {/* Real styled buttons positioned to exactly cover the image buttons */}
+          <div 
+            className="absolute flex"
             style={{ 
-              left: '3.5%', 
-              bottom: '12%', 
-              width: '15%', 
-              height: '6%',
-              minWidth: '150px',
-              minHeight: '40px',
-              background: 'transparent',
-              border: 'none'
+              left: '2.4%', 
+              bottom: '18%',
+              gap: '0.3%'
             }}
           >
-            <span className="sr-only">Explore Marketplace</span>
-          </button>
-          <button
-            onClick={handleVendorPortalClick}
-            className="absolute cursor-pointer"
-            data-testid="hero-vendor-btn"
-            style={{ 
-              left: '20%', 
-              bottom: '12%', 
-              width: '12%', 
-              height: '6%',
-              minWidth: '120px',
-              minHeight: '40px',
-              background: 'transparent',
-              border: 'none'
-            }}
-          >
-            <span className="sr-only">Vendor Portal</span>
-          </button>
+            <button
+              onClick={handleMarketplaceClick}
+              className="bg-[#E07A5F] text-white font-semibold rounded shadow-lg hover:bg-[#d06a4f] hover:scale-105 transition-all duration-200"
+              data-testid="hero-explore-btn"
+              style={{ 
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontSize: '1.25vw',
+                padding: '1.6vw 2.8vw',
+                minWidth: '16vw'
+              }}
+            >
+              Explore Marketplace
+            </button>
+            <button
+              onClick={handleVendorPortalClick}
+              className="bg-white text-slate-700 font-semibold rounded shadow-lg hover:bg-slate-50 hover:scale-105 transition-all duration-200 border border-slate-300"
+              data-testid="hero-vendor-btn"
+              style={{ 
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontSize: '1.25vw',
+                padding: '1.6vw 2.8vw',
+                minWidth: '14vw'
+              }}
+            >
+              Vendor Portal
+            </button>
+          </div>
         </div>
       </section>
 
