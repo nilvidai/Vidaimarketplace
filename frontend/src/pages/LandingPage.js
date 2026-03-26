@@ -501,38 +501,40 @@ const LandingPage = () => {
             }}
           />
           
-          {/* Real styled buttons positioned to exactly cover the image buttons */}
+          {/* Real styled buttons - larger to completely cover background buttons */}
           <div 
             className="absolute flex"
             style={{ 
-              left: '2.3%', 
-              bottom: '17.5%',
+              left: '1.8%', 
+              bottom: '16%',
               gap: '0%'
             }}
           >
             <button
               onClick={handleMarketplaceClick}
-              className="bg-[#E07A5F] text-white font-semibold rounded shadow-lg hover:bg-[#d06a4f] hover:scale-105 transition-all duration-200"
+              className="bg-[#E07A5F] text-white font-bold rounded-lg shadow-xl hover:bg-[#d06a4f] hover:scale-105 transition-all duration-200"
               data-testid="hero-explore-btn"
               style={{ 
                 fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: '1.3vw',
-                padding: '1.8vw 3vw',
-                minWidth: '17vw'
+                fontSize: '1.5vw',
+                padding: '2.2vw 3.5vw',
+                minWidth: '19vw',
+                minHeight: '6vw'
               }}
             >
               Explore Marketplace
             </button>
             <button
               onClick={handleVendorPortalClick}
-              className="bg-white text-slate-700 font-semibold rounded shadow-lg hover:bg-slate-50 hover:scale-105 transition-all duration-200 border border-slate-300"
+              className="bg-white text-slate-700 font-bold rounded-lg shadow-xl hover:bg-slate-50 hover:scale-105 transition-all duration-200 border-2 border-slate-300"
               data-testid="hero-vendor-btn"
               style={{ 
                 fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: '1.3vw',
-                padding: '1.8vw 3vw',
-                minWidth: '15vw',
-                marginLeft: '-0.5vw'
+                fontSize: '1.5vw',
+                padding: '2.2vw 3.5vw',
+                minWidth: '16vw',
+                minHeight: '6vw',
+                marginLeft: '-0.3vw'
               }}
             >
               Vendor Portal
