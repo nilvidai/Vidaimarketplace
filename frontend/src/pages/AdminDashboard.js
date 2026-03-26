@@ -727,6 +727,7 @@ const AdminDashboard = () => {
         }}
         product={selectedProduct}
         onApprove={approveProductWithCommission}
+        formatPrice={formatPrice}
       />
 
       <OrderDetailModal 
@@ -1663,7 +1664,7 @@ const AssignModal = ({ isOpen, onClose, clinic, vendors, onSuccess, authHeaders 
   );
 };
 
-const ApprovalModal = ({ isOpen, onClose, product, onApprove }) => {
+const ApprovalModal = ({ isOpen, onClose, product, onApprove, formatPrice }) => {
   const [commissionRate, setCommissionRate] = useState(10);
   const [loading, setLoading] = useState(false);
 
@@ -1734,12 +1735,12 @@ const ApprovalModal = ({ isOpen, onClose, product, onApprove }) => {
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">VIDAI Commission ({commissionRate}%)</span>
-              <span className="font-medium text-[#E07A5F]">${commissionAmount}</span>
+              <span className="font-medium text-[#E07A5F]">{formatPrice(commissionAmount)}</span>
             </div>
             <hr className="border-slate-200" />
             <div className="flex justify-between">
               <span className="font-semibold text-slate-900">Vendor Receives</span>
-              <span className="font-bold text-green-600">${vendorAmount}</span>
+              <span className="font-bold text-green-600">{formatPrice(vendorAmount)}</span>
             </div>
           </div>
 
