@@ -501,25 +501,41 @@ const LandingPage = () => {
             }}
           />
           
-          {/* Invisible clickable overlays on top of image buttons */}
-          <div className="absolute bottom-[8%] left-[4%] flex gap-3 z-10">
-            <button
-              onClick={handleMarketplaceClick}
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-              data-testid="hero-explore-btn"
-              style={{ width: '180px', height: '48px', background: 'transparent' }}
-            >
-              <span className="sr-only">Explore Marketplace</span>
-            </button>
-            <button
-              onClick={handleVendorPortalClick}
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-              data-testid="hero-vendor-btn"
-              style={{ width: '140px', height: '48px', background: 'transparent' }}
-            >
-              <span className="sr-only">Vendor Portal</span>
-            </button>
-          </div>
+          {/* Invisible clickable overlays positioned exactly over the image buttons */}
+          <button
+            onClick={handleMarketplaceClick}
+            className="absolute cursor-pointer"
+            data-testid="hero-explore-btn"
+            style={{ 
+              left: '3.5%', 
+              bottom: '12%', 
+              width: '15%', 
+              height: '6%',
+              minWidth: '150px',
+              minHeight: '40px',
+              background: 'transparent',
+              border: 'none'
+            }}
+          >
+            <span className="sr-only">Explore Marketplace</span>
+          </button>
+          <button
+            onClick={handleVendorPortalClick}
+            className="absolute cursor-pointer"
+            data-testid="hero-vendor-btn"
+            style={{ 
+              left: '20%', 
+              bottom: '12%', 
+              width: '12%', 
+              height: '6%',
+              minWidth: '120px',
+              minHeight: '40px',
+              background: 'transparent',
+              border: 'none'
+            }}
+          >
+            <span className="sr-only">Vendor Portal</span>
+          </button>
         </div>
       </section>
 
