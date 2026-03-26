@@ -453,17 +453,17 @@ const LandingPage = () => {
                 <>
                   <button
                     onClick={() => navigate('/admin')}
-                    className="text-slate-600 hover:text-slate-900 font-medium text-sm"
+                    className="btn-secondary px-4 py-2 rounded-lg font-medium text-sm"
                     data-testid="admin-link"
                   >
-                    Admin
+                    Admin Portal
                   </button>
                   <button
                     onClick={() => setShowClinicLogin(true)}
-                    className="text-slate-600 hover:text-slate-900 font-medium text-sm"
+                    className="btn-secondary px-4 py-2 rounded-lg font-medium text-sm"
                     data-testid="clinic-login-link"
                   >
-                    Clinic Login
+                    Clinic Portal
                   </button>
                   <button
                     onClick={handleVendorPortalClick}
