@@ -501,40 +501,48 @@ const LandingPage = () => {
             }}
           />
           
-          {/* Real styled buttons - larger to completely cover background buttons */}
+          {/* White overlay to completely hide background buttons */}
           <div 
-            className="absolute flex"
+            className="absolute"
             style={{ 
-              left: '1.8%', 
-              bottom: '16%',
-              gap: '0%'
+              left: '0%', 
+              bottom: '5%',
+              width: '45%',
+              height: '25%',
+              background: 'linear-gradient(to right, rgb(255,255,255) 0%, rgb(255,255,255) 75%, rgba(255,255,255,0) 100%)'
+            }}
+          />
+          
+          {/* Real buttons - bigger and moved up */}
+          <div 
+            className="absolute flex items-center gap-5"
+            style={{ 
+              left: '3%', 
+              bottom: '15%'
             }}
           >
             <button
               onClick={handleMarketplaceClick}
-              className="bg-[#E07A5F] text-white font-bold rounded-lg shadow-xl hover:bg-[#d06a4f] hover:scale-105 transition-all duration-200"
+              className="bg-[#E07A5F] text-white font-bold rounded-lg shadow-lg hover:bg-[#d06a4f] hover:shadow-xl hover:scale-105 transition-all duration-200"
               data-testid="hero-explore-btn"
               style={{ 
                 fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: '1.5vw',
-                padding: '2.2vw 3.5vw',
-                minWidth: '19vw',
-                minHeight: '6vw'
+                fontSize: '18px',
+                padding: '18px 36px',
+                letterSpacing: '0.5px'
               }}
             >
               Explore Marketplace
             </button>
             <button
               onClick={handleVendorPortalClick}
-              className="bg-white text-slate-700 font-bold rounded-lg shadow-xl hover:bg-slate-50 hover:scale-105 transition-all duration-200 border-2 border-slate-300"
+              className="bg-white text-slate-700 font-bold rounded-lg shadow-lg hover:bg-slate-50 hover:shadow-xl hover:scale-105 transition-all duration-200 border-2 border-slate-300"
               data-testid="hero-vendor-btn"
               style={{ 
                 fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: '1.5vw',
-                padding: '2.2vw 3.5vw',
-                minWidth: '16vw',
-                minHeight: '6vw',
-                marginLeft: '-0.3vw'
+                fontSize: '18px',
+                padding: '18px 36px',
+                letterSpacing: '0.5px'
               }}
             >
               Vendor Portal
