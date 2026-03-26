@@ -8,6 +8,7 @@ import {
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -32,6 +33,7 @@ const Marketplace = () => {
   
   const { user, logout, getToken } = useAuth();
   const { addToCart, getCartCount } = useCart();
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
 
   const authHeaders = { headers: { Authorization: `Bearer ${getToken()}` } };
@@ -419,6 +421,7 @@ const Marketplace = () => {
                     key={product.id} 
                     product={product} 
                     onAddToCart={handleAddToCart}
+                    formatPrice={formatPrice}
                   />
                 ))}
               </div>
@@ -510,7 +513,7 @@ const Marketplace = () => {
   );
 };
 
-const ProductCard = ({ product, onAddToCart }) => {
+const ProductCard = ({ product, onAddToCart, formatPrice }) => {
   const [quantity, setQuantity] = useState(1);
   const [imageError, setImageError] = useState(false);
 
@@ -567,7 +570,7 @@ const ProductCard = ({ product, onAddToCart }) => {
         <p className="text-xs text-slate-500 mb-2 line-clamp-2">{product.description}</p>
         
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xl font-bold text-[#E07A5F]">${product.price.toFixed(2)}</span>
+          <span className="text-xl font-bold text-[#E07A5F]">{formatPrice(product.price)}</span>
           <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">{product.category}</span>
         </div>
 
@@ -637,7 +640,7 @@ const PurchasesList = ({ purchases, onBack }) => (
               <div>
                 <div className="text-sm text-slate-500">Order #{purchase.id?.slice(0, 8)}</div>
                 <div className="text-lg font-semibold text-slate-900 mt-1">
-                  ${purchase.total_amount?.toFixed(2)}
+                  {formatPrice(purchase.total_amount)}
                 </div>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -650,7 +653,7 @@ const PurchasesList = ({ purchases, onBack }) => (
               {purchase.items?.map((item, idx) => (
                 <div key={idx} className="flex justify-between text-sm mb-2">
                   <span className="text-slate-600">{item.name} x {item.quantity}</span>
-                  <span className="text-slate-900">${item.subtotal?.toFixed(2)}</span>
+                  <span className="text-slate-900">{formatPrice(item.subtotal)}</span>
                 </div>
               ))}
             </div>
@@ -775,12 +778,12 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder, o
               {selectedOrder.items?.map((item, idx) => (
                 <div key={idx} className="flex justify-between">
                   <span className="text-slate-600">{item.name} × {item.quantity}</span>
-                  <span className="font-medium text-slate-900">${item.subtotal?.toFixed(2)}</span>
+                  <span className="font-medium text-slate-900">{formatPrice(item.subtotal)}</span>
                 </div>
               ))}
               <div className="border-t border-slate-200 pt-3 flex justify-between">
                 <span className="font-semibold text-slate-900">Total</span>
-                <span className="font-bold text-[#E07A5F]">${selectedOrder.total_amount?.toFixed(2)}</span>
+                <span className="font-bold text-[#E07A5F]">{formatPrice(selectedOrder.total_amount)}</span>
               </div>
             </div>
           </div>
@@ -857,7 +860,7 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder, o
                 <div>
                   <div className="text-sm text-slate-500">Order #{order.id.slice(0, 8)}</div>
                   <div className="text-lg font-semibold text-slate-900 mt-1">
-                    ${order.total_amount?.toFixed(2)}
+                    {formatPrice(order.total_amount)}
                   </div>
                   <div className="text-sm text-slate-500 mt-1">
                     {order.items?.length} item(s) • {formatDate(order.created_at)}

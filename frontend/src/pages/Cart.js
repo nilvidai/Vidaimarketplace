@@ -6,11 +6,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Cart = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { cart, selectedVendor, updateQuantity, removeFromCart, getCartTotal, clearCart } = useCart();
+  const { formatPrice } = useCurrency();
 
   if (!user || user.role !== 'clinic') {
     navigate('/');
@@ -104,7 +106,7 @@ const Cart = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-slate-900 truncate">{item.product.name}</h3>
                         <p className="text-sm text-slate-500">{item.product.category}</p>
-                        <p className="price-tag mt-1">${(item.product.price || 0).toFixed(2)}</p>
+                        <p className="price-tag mt-1">{formatPrice(item.product.price)}</p>
                       </div>
 
                       <div className="flex items-center gap-4">
@@ -128,7 +130,7 @@ const Cart = () => {
 
                         <div className="text-right">
                           <p className="font-semibold text-slate-900">
-                            ${((item.product.price || 0) * (item.quantity || 1)).toFixed(2)}
+                            {formatPrice((item.product.price || 0) * (item.quantity || 1))}
                           </p>
                         </div>
 
@@ -154,7 +156,7 @@ const Cart = () => {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Subtotal</span>
-                    <span className="text-slate-900">${getCartTotal().toFixed(2)}</span>
+                    <span className="text-slate-900">{formatPrice(getCartTotal())}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Shipping</span>
@@ -164,7 +166,7 @@ const Cart = () => {
                   <div className="flex justify-between">
                     <span className="font-semibold text-slate-900">Total</span>
                     <span className="font-bold text-xl text-[#E07A5F]">
-                      ${getCartTotal().toFixed(2)}
+                      {formatPrice(getCartTotal())}
                     </span>
                   </div>
                 </div>
