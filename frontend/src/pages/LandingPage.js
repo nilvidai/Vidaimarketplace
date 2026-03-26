@@ -459,6 +459,13 @@ const LandingPage = () => {
                     Admin
                   </button>
                   <button
+                    onClick={() => setShowClinicLogin(true)}
+                    className="text-slate-600 hover:text-slate-900 font-medium text-sm"
+                    data-testid="clinic-login-link"
+                  >
+                    Clinic Login
+                  </button>
+                  <button
                     onClick={handleVendorPortalClick}
                     className="btn-secondary px-4 py-2 rounded-lg font-medium text-sm"
                     data-testid="vendor-portal-btn"
@@ -482,7 +489,7 @@ const LandingPage = () => {
 
       {/* Hero Section - Using complete reference image */}
       <section className="relative overflow-hidden bg-white" data-testid="hero-section">
-        <div className="w-full">
+        <div className="w-full relative">
           <img
             src="https://customer-assets.emergentagent.com/job_fc3f53c4-805f-4a63-a1d7-5c7c27f592d3/artifacts/w0geonth_WhatsApp%20Image%202026-02-21%20at%2017.50.17.jpeg"
             alt="VIDAI IVF Marketplace - EMR Integrated Healthcare Platform"
@@ -493,26 +500,26 @@ const LandingPage = () => {
               imageRendering: '-webkit-optimize-contrast'
             }}
           />
-        </div>
-        
-        {/* Clickable buttons overlay */}
-        <div className="absolute bottom-[8%] left-[4%] flex gap-3 z-10">
-          <button
-            onClick={handleMarketplaceClick}
-            className="cursor-pointer hover:scale-105 transition-transform"
-            data-testid="hero-explore-btn"
-            style={{ width: '180px', height: '48px', background: 'transparent' }}
-          >
-            <span className="sr-only">Explore Marketplace</span>
-          </button>
-          <button
-            onClick={handleVendorPortalClick}
-            className="cursor-pointer hover:scale-105 transition-transform"
-            data-testid="hero-vendor-btn"
-            style={{ width: '140px', height: '48px', background: 'transparent' }}
-          >
-            <span className="sr-only">Vendor Portal</span>
-          </button>
+          
+          {/* Invisible clickable overlays on top of image buttons */}
+          <div className="absolute bottom-[8%] left-[4%] flex gap-3 z-10">
+            <button
+              onClick={handleMarketplaceClick}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              data-testid="hero-explore-btn"
+              style={{ width: '180px', height: '48px', background: 'transparent' }}
+            >
+              <span className="sr-only">Explore Marketplace</span>
+            </button>
+            <button
+              onClick={handleVendorPortalClick}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              data-testid="hero-vendor-btn"
+              style={{ width: '140px', height: '48px', background: 'transparent' }}
+            >
+              <span className="sr-only">Vendor Portal</span>
+            </button>
+          </div>
         </div>
       </section>
 

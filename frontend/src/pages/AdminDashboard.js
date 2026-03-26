@@ -2161,7 +2161,9 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
   const [formData, setFormData] = useState({
     contact_email: settings?.contact_email || '',
     company_name: settings?.company_name || 'VIDAI',
-    notify_on_enquiry: settings?.notify_on_enquiry ?? true
+    notify_on_enquiry: settings?.notify_on_enquiry ?? true,
+    currency: settings?.currency || 'INR',
+    currency_symbol: settings?.currency_symbol || '₹'
   });
   const [stripeSettings, setStripeSettings] = useState({
     stripe_mode: 'sandbox',
@@ -2181,12 +2183,25 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
   const [loadingStripe, setLoadingStripe] = useState(false);
   const [loadingSendgrid, setLoadingSendgrid] = useState(false);
 
+  const currencyOptions = [
+    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+    { code: 'USD', symbol: '$', name: 'US Dollar' },
+    { code: 'EUR', symbol: '€', name: 'Euro' },
+    { code: 'GBP', symbol: '£', name: 'British Pound' },
+    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' },
+    { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' }
+  ];
+
   useEffect(() => {
     if (settings) {
       setFormData({
         contact_email: settings.contact_email || '',
         company_name: settings.company_name || 'VIDAI',
-        notify_on_enquiry: settings.notify_on_enquiry ?? true
+        notify_on_enquiry: settings.notify_on_enquiry ?? true,
+        currency: settings.currency || 'INR',
+        currency_symbol: settings.currency_symbol || '₹'
       });
     }
   }, [settings]);
@@ -2348,6 +2363,32 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
                   />
                   <p className="text-xs text-slate-500 mt-1">
                     Enquiry notifications will be sent to this email
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Currency</label>
+                  <select
+                    value={formData.currency}
+                    onChange={(e) => {
+                      const selected = currencyOptions.find(c => c.code === e.target.value);
+                      setFormData({
+                        ...formData, 
+                        currency: e.target.value,
+                        currency_symbol: selected?.symbol || '₹'
+                      });
+                    }}
+                    className="form-input"
+                    data-testid="settings-currency-select"
+                  >
+                    {currencyOptions.map(opt => (
+                      <option key={opt.code} value={opt.code}>
+                        {opt.symbol} - {opt.name} ({opt.code})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    This currency will be used across the marketplace for pricing
                   </p>
                 </div>
 

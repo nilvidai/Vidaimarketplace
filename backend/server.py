@@ -396,6 +396,8 @@ class AdminSettings(BaseModel):
     contact_email: Optional[str] = None
     company_name: Optional[str] = "VIDAI"
     notify_on_enquiry: bool = True
+    currency: Optional[str] = "INR"  # Default to Indian Rupees
+    currency_symbol: Optional[str] = "₹"  # Default currency symbol
 
 class StripeSettings(BaseModel):
     stripe_mode: str = "sandbox"  # sandbox or live
@@ -1011,13 +1013,20 @@ async def get_admin_settings(admin=Depends(get_admin_user)):
     """Get admin settings"""
     settings = await db.settings.find_one({"type": "admin"}, {"_id": 0})
     if not settings:
-        # Return default settings
+        # Return default settings with INR as default currency
         return {
             "type": "admin",
             "contact_email": "",
             "company_name": "VIDAI",
-            "notify_on_enquiry": True
+            "notify_on_enquiry": True,
+            "currency": "INR",
+            "currency_symbol": "₹"
         }
+    # Ensure currency fields exist
+    if "currency" not in settings:
+        settings["currency"] = "INR"
+    if "currency_symbol" not in settings:
+        settings["currency_symbol"] = "₹"
     return settings
 
 @api_router.put("/admin/settings")
@@ -1028,6 +1037,8 @@ async def update_admin_settings(data: AdminSettings, admin=Depends(get_admin_use
         "contact_email": data.contact_email,
         "company_name": data.company_name,
         "notify_on_enquiry": data.notify_on_enquiry,
+        "currency": data.currency or "INR",
+        "currency_symbol": data.currency_symbol or "₹",
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     await db.settings.update_one(
@@ -1684,6 +1695,16 @@ async def stripe_webhook(request: Request):
         return {"status": "error", "message": str(e)}
 
 # ==================== PUBLIC ROUTES ====================
+
+@api_router.get("/public/settings")
+async def get_public_settings():
+    """Get public settings (currency, company name) - no auth required"""
+    settings = await db.settings.find_one({"type": "admin"}, {"_id": 0})
+    return {
+        "currency": settings.get("currency", "INR") if settings else "INR",
+        "currency_symbol": settings.get("currency_symbol", "₹") if settings else "₹",
+        "company_name": settings.get("company_name", "VIDAI") if settings else "VIDAI"
+    }
 
 # ==================== CLINIC DASHBOARD ROUTES ====================
 
