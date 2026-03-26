@@ -505,9 +505,9 @@ const LandingPage = () => {
           <div 
             className="absolute flex"
             style={{ 
-              left: '2.4%', 
-              bottom: '18%',
-              gap: '0.3%'
+              left: '2.3%', 
+              bottom: '17.5%',
+              gap: '0%'
             }}
           >
             <button
@@ -516,9 +516,9 @@ const LandingPage = () => {
               data-testid="hero-explore-btn"
               style={{ 
                 fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: '1.25vw',
-                padding: '1.6vw 2.8vw',
-                minWidth: '16vw'
+                fontSize: '1.3vw',
+                padding: '1.8vw 3vw',
+                minWidth: '17vw'
               }}
             >
               Explore Marketplace
@@ -529,9 +529,10 @@ const LandingPage = () => {
               data-testid="hero-vendor-btn"
               style={{ 
                 fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: '1.25vw',
-                padding: '1.6vw 2.8vw',
-                minWidth: '14vw'
+                fontSize: '1.3vw',
+                padding: '1.8vw 3vw',
+                minWidth: '15vw',
+                marginLeft: '-0.5vw'
               }}
             >
               Vendor Portal
