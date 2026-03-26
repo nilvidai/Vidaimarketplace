@@ -381,7 +381,11 @@ const AdminDashboard = () => {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                  <div 
+                    onClick={() => handleTabChange('orders')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-all cursor-pointer hover:border-blue-200"
+                    data-testid="stat-revenue"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                         <DollarSign className="w-6 h-6 text-blue-600" />
@@ -392,7 +396,11 @@ const AdminDashboard = () => {
                     <div className="text-sm text-slate-500 mt-1">Total Revenue</div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                  <div 
+                    onClick={() => handleTabChange('orders')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-all cursor-pointer hover:border-green-200"
+                    data-testid="stat-orders"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                         <ShoppingBag className="w-6 h-6 text-green-600" />
@@ -403,7 +411,11 @@ const AdminDashboard = () => {
                     <div className="text-sm text-slate-500 mt-1">Total Orders</div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                  <div 
+                    onClick={() => handleTabChange('vendors')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-all cursor-pointer hover:border-purple-200"
+                    data-testid="stat-vendors"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                         <Users className="w-6 h-6 text-purple-600" />
@@ -414,7 +426,11 @@ const AdminDashboard = () => {
                     <div className="text-sm text-slate-500 mt-1">Vendors</div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                  <div 
+                    onClick={() => handleTabChange('clinics')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-all cursor-pointer hover:border-orange-200"
+                    data-testid="stat-clinics"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
                         <Building2 className="w-6 h-6 text-orange-600" />
@@ -428,7 +444,11 @@ const AdminDashboard = () => {
 
                 {/* Second Row Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-gradient-to-r from-[#E07A5F] to-[#c4644d] rounded-xl p-6 text-white">
+                  <div 
+                    onClick={() => handleTabChange('reports')}
+                    className="bg-gradient-to-r from-[#E07A5F] to-[#c4644d] rounded-xl p-6 text-white cursor-pointer hover:opacity-90 transition-opacity"
+                    data-testid="stat-commission"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <DollarSign className="w-8 h-8 opacity-80" />
                       <span className="text-xs bg-white/20 px-2 py-1 rounded-full">Commission</span>
@@ -437,7 +457,11 @@ const AdminDashboard = () => {
                     <div className="text-sm opacity-80 mt-1">Total Earned</div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-slate-100 p-6">
+                  <div 
+                    onClick={() => navigate('/admin/marketplace')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 cursor-pointer hover:shadow-lg transition-all hover:border-teal-200"
+                    data-testid="stat-products"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <Package className="w-8 h-8 text-teal-500" />
                       <span className="text-xs text-slate-400">Products</span>
@@ -446,7 +470,11 @@ const AdminDashboard = () => {
                     <div className="text-sm text-slate-500 mt-1">Approved Products</div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-slate-100 p-6">
+                  <div 
+                    onClick={() => handleTabChange('approvals')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 cursor-pointer hover:shadow-lg transition-all hover:border-yellow-200"
+                    data-testid="stat-approvals"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <CheckCircle className="w-8 h-8 text-yellow-500" />
                       {dashboardStats.summary.pending_approvals > 0 && (
@@ -457,7 +485,11 @@ const AdminDashboard = () => {
                     <div className="text-sm text-slate-500 mt-1">Pending Approvals</div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-slate-100 p-6">
+                  <div 
+                    onClick={() => handleTabChange('enquiries')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 cursor-pointer hover:shadow-lg transition-all hover:border-indigo-200"
+                    data-testid="stat-enquiries"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <MessageSquare className="w-8 h-8 text-indigo-500" />
                       {dashboardStats.summary.new_enquiries > 0 && (
