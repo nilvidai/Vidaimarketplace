@@ -7,6 +7,7 @@ import {
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -22,6 +23,7 @@ const AdminMarketplace = () => {
   const navigate = useNavigate();
   const { user, getToken } = useAuth();
   const { addToCart, getCartCount } = useCart();
+  const { formatPrice } = useCurrency();
 
   const authHeaders = { headers: { Authorization: `Bearer ${getToken()}` } };
 
@@ -231,7 +233,7 @@ const AdminMarketplace = () => {
                       <h3 className="font-semibold text-slate-900 mb-1">{product.name}</h3>
                       <p className="text-sm text-slate-500 mb-3 line-clamp-2">{product.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="price-tag text-xl">${product.price?.toFixed(2)}</span>
+                        <span className="price-tag text-xl">{formatPrice(product.price)}</span>
                         <span className={`text-xs px-2 py-1 rounded-full ${
                           product.stock_quantity > 0 ? 'badge-success' : 'badge-error'
                         }`}>

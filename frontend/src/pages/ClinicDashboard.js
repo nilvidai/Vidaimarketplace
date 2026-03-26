@@ -209,7 +209,11 @@ const ClinicDashboard = () => {
               <div className="space-y-8">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                  <div 
+                    onClick={() => navigate('/marketplace/orders')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-all cursor-pointer hover:border-blue-200"
+                    data-testid="stat-total-orders"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                         <ShoppingBag className="w-6 h-6 text-blue-600" />
@@ -220,7 +224,11 @@ const ClinicDashboard = () => {
                     <div className="text-sm text-slate-500 mt-1">Total Orders</div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                  <div 
+                    onClick={() => navigate('/marketplace/orders')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-all cursor-pointer hover:border-yellow-200"
+                    data-testid="stat-pending-orders"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
                         <Clock className="w-6 h-6 text-yellow-600" />
@@ -231,7 +239,11 @@ const ClinicDashboard = () => {
                     <div className="text-sm text-slate-500 mt-1">Pending Orders</div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                  <div 
+                    onClick={() => navigate('/marketplace/orders')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-all cursor-pointer hover:border-indigo-200"
+                    data-testid="stat-shipped-orders"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
                         <Truck className="w-6 h-6 text-indigo-600" />
@@ -242,7 +254,11 @@ const ClinicDashboard = () => {
                     <div className="text-sm text-slate-500 mt-1">Shipped Orders</div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-shadow">
+                  <div 
+                    onClick={() => navigate('/marketplace/orders')}
+                    className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-lg transition-all cursor-pointer hover:border-green-200"
+                    data-testid="stat-total-spent"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                         <DollarSign className="w-6 h-6 text-green-600" />

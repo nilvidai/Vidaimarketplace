@@ -241,6 +241,7 @@ const VendorDashboard = () => {
                   setShowProductModal(true);
                 }}
                 onDelete={deleteProduct}
+                formatPrice={formatPrice}
               />
             )}
             {activeTab === 'orders' && (
@@ -252,10 +253,11 @@ const VendorDashboard = () => {
                   showToast('Shipping details updated');
                 }}
                 authHeaders={authHeaders}
+                formatPrice={formatPrice}
               />
             )}
             {activeTab === 'inventory' && (
-              <VendorInventoryTab inventory={inventory} />
+              <VendorInventoryTab inventory={inventory} formatPrice={formatPrice} />
             )}
             {activeTab === 'tickets' && (
               <VendorTicketsTab 
@@ -303,7 +305,7 @@ const VendorDashboard = () => {
   );
 };
 
-const ProductsTab = ({ products, categories, onAdd, onEdit, onDelete }) => (
+const ProductsTab = ({ products, categories, onAdd, onEdit, onDelete, formatPrice }) => (
   <div>
     <div className="flex justify-between items-center mb-8">
       <div>
@@ -390,7 +392,7 @@ const ProductsTab = ({ products, categories, onAdd, onEdit, onDelete }) => (
   </div>
 );
 
-const OrdersTab = ({ orders, onUpdateStatus, onUpdateShipping, authHeaders }) => {
+const OrdersTab = ({ orders, onUpdateStatus, onUpdateShipping, authHeaders, formatPrice }) => {
   const [showShippingModal, setShowShippingModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const statusOptions = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -669,7 +671,7 @@ const ShippingModal = ({ isOpen, onClose, order, onSuccess, authHeaders }) => {
   );
 };
 
-const VendorInventoryTab = ({ inventory }) => {
+const VendorInventoryTab = ({ inventory, formatPrice }) => {
   const { items, summary } = inventory;
 
   return (
@@ -760,7 +762,7 @@ const VendorInventoryTab = ({ inventory }) => {
                   </td>
                   <td className="text-slate-500">{item.commission_rate}%</td>
                   <td className="text-green-600 font-medium">{formatPrice(item.vendor_amount)}</td>
-                  <td className="font-medium text-slate-900">${item.potential_earnings?.toFixed(2)}</td>
+                  <td className="font-medium text-slate-900">{formatPrice(item.potential_earnings || 0)}</td>
                 </tr>
               ))
             )}

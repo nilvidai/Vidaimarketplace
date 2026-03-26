@@ -150,12 +150,12 @@ const Orders = () => {
                           <div>
                             <p className="font-medium text-slate-900">{item.name}</p>
                             <p className="text-sm text-slate-500">
-                              ${item.price.toFixed(2)} × {item.quantity}
+                              {formatPrice(item.price)} × {item.quantity}
                             </p>
                           </div>
                         </div>
                         <p className="font-medium text-slate-900">
-                          ${item.subtotal.toFixed(2)}
+                          {formatPrice(item.subtotal)}
                         </p>
                       </div>
                     ))}

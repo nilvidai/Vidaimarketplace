@@ -4,6 +4,7 @@ import { CheckCircle, XCircle, Loader, Package } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -12,6 +13,7 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const { clearCart } = useCart();
+  const { formatPrice } = useCurrency();
   
   const [status, setStatus] = useState('checking'); // checking, success, failed
   const [paymentDetails, setPaymentDetails] = useState(null);
@@ -99,7 +101,7 @@ const PaymentSuccess = () => {
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-slate-500">Amount Paid</span>
                     <span className="font-medium text-slate-900">
-                      ${(paymentDetails.amount_total / 100).toFixed(2)} {paymentDetails.currency?.toUpperCase()}
+                      {formatPrice(paymentDetails.amount_total / 100)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">

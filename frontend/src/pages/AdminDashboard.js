@@ -627,19 +627,21 @@ const AdminDashboard = () => {
               <ProductsApprovalTab 
                 products={pendingProducts}
                 onApprove={handleApproveClick}
+                formatPrice={formatPrice}
               />
             )}
             {activeTab === 'orders' && (
               <AdminOrdersTab 
                 orders={orders}
                 onViewOrder={handleViewOrder}
+                formatPrice={formatPrice}
               />
             )}
             {activeTab === 'inventory' && (
-              <InventoryTab inventory={inventory} vendors={vendors} />
+              <InventoryTab inventory={inventory} vendors={vendors} formatPrice={formatPrice} />
             )}
             {activeTab === 'reports' && (
-              <ReportsTab report={commissionReport} />
+              <ReportsTab report={commissionReport} formatPrice={formatPrice} />
             )}
             {activeTab === 'assignments' && (
               <AssignmentsTab 
@@ -734,6 +736,7 @@ const AdminDashboard = () => {
           setSelectedOrder(null);
         }}
         order={selectedOrder}
+        formatPrice={formatPrice}
       />
 
       <EnquiryDetailModal 
@@ -898,7 +901,7 @@ const ClinicsTab = ({ clinics, onDelete, onAdd }) => (
   </div>
 );
 
-const ProductsApprovalTab = ({ products, onApprove }) => (
+const ProductsApprovalTab = ({ products, onApprove, formatPrice }) => (
   <div>
     <div className="mb-8">
       <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
@@ -953,7 +956,7 @@ const ProductsApprovalTab = ({ products, onApprove }) => (
   </div>
 );
 
-const InventoryTab = ({ inventory, vendors }) => {
+const InventoryTab = ({ inventory, vendors, formatPrice }) => {
   const [filterVendor, setFilterVendor] = useState('');
   
   const filteredInventory = filterVendor 
@@ -1057,7 +1060,7 @@ const InventoryTab = ({ inventory, vendors }) => {
   );
 };
 
-const ReportsTab = ({ report }) => {
+const ReportsTab = ({ report, formatPrice }) => {
   if (!report) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1767,7 +1770,7 @@ const ApprovalModal = ({ isOpen, onClose, product, onApprove }) => {
   );
 };
 
-const AdminOrdersTab = ({ orders, onViewOrder }) => {
+const AdminOrdersTab = ({ orders, onViewOrder, formatPrice }) => {
   const [filterStatus, setFilterStatus] = useState('');
   
   const filteredOrders = filterStatus 
@@ -1901,7 +1904,7 @@ const AdminOrdersTab = ({ orders, onViewOrder }) => {
   );
 };
 
-const OrderDetailModal = ({ isOpen, onClose, order }) => {
+const OrderDetailModal = ({ isOpen, onClose, order, formatPrice }) => {
   if (!isOpen || !order) return null;
 
   const formatDate = (dateStr) => {
