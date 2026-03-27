@@ -105,6 +105,40 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - All pages now use formatPrice from CurrencyContext
 - INR (₹) displays correctly across all dashboards and order pages
 
+### Iteration 11 - Mar 27, 2026 - Vendor Self-Registration & Email Notifications
+
+**Vendor Self-Registration:**
+- Added vendor signup form with fields: Full Name, Company Name, Email, Phone, Password
+- Password confirmation with validation (min 6 characters)
+- Auto-login after successful registration
+- Toggle between Login/Signup/Forgot Password modes
+- POST /api/vendor/register endpoint
+
+**Forgot Password:**
+- Added forgot password flow for vendors
+- POST /api/vendor/forgot-password endpoint
+- Generates reset token (expires in 1 hour)
+- Sends password reset email via SendGrid
+- Stores reset tokens in password_resets collection
+
+**Contact Sales Email Notifications:**
+- Contact form now sends emails via configured SendGrid
+- Admin receives notification email with full enquiry details
+- Customer receives auto-reply confirmation email
+- Beautiful HTML email templates with VIDAI branding
+
+**Product Image Upload:**
+- Added file upload option for product images
+- Supports JPG, PNG, GIF, WebP (max 5MB)
+- POST /api/upload/image endpoint
+- Static file serving at /uploads/
+- Alternative URL input still available
+
+**UI Updates:**
+- Header buttons: Admin Portal, Clinic Portal, Vendor Portal (consistent bordered style)
+- Login modal with Forgot Password link
+- Sign Up link for vendors (not for clinics - admin managed)
+
 ## Tech Stack
 - Frontend: React + Tailwind CSS + CurrencyContext for global formatting
 - Backend: FastAPI + MongoDB

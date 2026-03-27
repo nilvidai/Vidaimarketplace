@@ -7,15 +7,38 @@ import { useAuth } from '../context/AuthContext';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const LoginModal = ({ isOpen, onClose, type, onSuccess }) => {
+  const [mode, setMode] = useState('login'); // 'login', 'signup', 'forgot'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
+  // Reset form when modal opens/closes or mode changes
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setName('');
+    setCompanyName('');
+    setPhone('');
+    setError('');
+    setSuccess('');
+  };
+
+  const handleModeChange = (newMode) => {
+    resetForm();
+    setMode(newMode);
+  };
+
   if (!isOpen) return null;
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -34,16 +57,71 @@ export const LoginModal = ({ isOpen, onClose, type, onSuccess }) => {
     }
   };
 
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await axios.post(`${API}/vendor/register`, {
+        name,
+        email,
+        password,
+        company_name: companyName,
+        phone: phone || null
+      });
+      
+      login(response.data, response.data.token);
+      onSuccess(response.data);
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      await axios.post(`${API}/vendor/forgot-password`, { email });
+      setSuccess('If an account exists with this email, you will receive password reset instructions.');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to send reset email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="modal-backdrop modal-overlay" onClick={onClose}>
-      <div className="modal-box modal-content" onClick={e => e.stopPropagation()}>
+      <div className="modal-box modal-content max-w-md" onClick={e => e.stopPropagation()}>
         <div className="modal-header flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">
-              {type === 'vendor' ? 'Vendor Login' : 'Clinic Login'}
+              {mode === 'login' && (type === 'vendor' ? 'Vendor Login' : 'Clinic Login')}
+              {mode === 'signup' && 'Vendor Registration'}
+              {mode === 'forgot' && 'Reset Password'}
             </h2>
             <p className="text-slate-500 text-sm mt-1">
-              Enter your credentials to continue
+              {mode === 'login' && 'Enter your credentials to continue'}
+              {mode === 'signup' && 'Create your vendor account'}
+              {mode === 'forgot' && 'Enter your email to reset password'}
             </p>
           </div>
           <button 
@@ -55,59 +133,259 @@ export const LoginModal = ({ isOpen, onClose, type, onSuccess }) => {
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="modal-body">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-              {error}
-            </div>
-          )}
-          
-          <div className="form-group">
-            <label className="form-label">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="form-input"
-              placeholder="Enter your email"
-              required
-              data-testid="login-email-input"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="form-input"
-              placeholder="Enter your password"
-              required
-              data-testid="login-password-input"
-            />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
-            data-testid="login-submit-btn"
-          >
-            {loading ? (
-              <div className="spinner"></div>
-            ) : (
-              <>
-                Sign In
-                <ArrowRight className="w-4 h-4" />
-              </>
+        {/* Login Form */}
+        {mode === 'login' && (
+          <form onSubmit={handleLogin} className="modal-body">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
             )}
-          </button>
-          
-          <p className="text-center text-sm text-slate-500 mt-4">
-            Contact your administrator if you don't have login credentials
-          </p>
-        </form>
+            
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="form-input"
+                placeholder="Enter your email"
+                required
+                data-testid="login-email-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="form-input"
+                placeholder="Enter your password"
+                required
+                data-testid="login-password-input"
+              />
+            </div>
+
+            <div className="flex justify-end mb-4">
+              <button
+                type="button"
+                onClick={() => handleModeChange('forgot')}
+                className="text-sm text-[#E07A5F] hover:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full btn-primary py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
+              data-testid="login-submit-btn"
+            >
+              {loading ? (
+                <div className="spinner"></div>
+              ) : (
+                <>
+                  Sign In
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+            
+            {type === 'vendor' && (
+              <p className="text-center text-sm text-slate-500 mt-4">
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('signup')}
+                  className="text-[#E07A5F] font-medium hover:underline"
+                >
+                  Sign Up
+                </button>
+              </p>
+            )}
+
+            {type === 'clinic' && (
+              <p className="text-center text-sm text-slate-500 mt-4">
+                Contact your administrator if you don't have login credentials
+              </p>
+            )}
+          </form>
+        )}
+
+        {/* Signup Form (Vendor Only) */}
+        {mode === 'signup' && (
+          <form onSubmit={handleSignup} className="modal-body">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="form-label">Full Name *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="form-input"
+                  placeholder="John Doe"
+                  required
+                  data-testid="signup-name-input"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Company Name *</label>
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="form-input"
+                  placeholder="Acme Medical"
+                  required
+                  data-testid="signup-company-input"
+                />
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">Email *</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="form-input"
+                placeholder="john@company.com"
+                required
+                data-testid="signup-email-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Phone (Optional)</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="form-input"
+                placeholder="+91 98765 43210"
+                data-testid="signup-phone-input"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="form-label">Password *</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="form-input"
+                  placeholder="Min 6 characters"
+                  required
+                  data-testid="signup-password-input"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Confirm Password *</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="form-input"
+                  placeholder="Confirm password"
+                  required
+                  data-testid="signup-confirm-password-input"
+                />
+              </div>
+            </div>
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full btn-primary py-3 rounded-lg font-semibold flex items-center justify-center gap-2 mt-2"
+              data-testid="signup-submit-btn"
+            >
+              {loading ? (
+                <div className="spinner"></div>
+              ) : (
+                <>
+                  Create Account
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+            
+            <p className="text-center text-sm text-slate-500 mt-4">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange('login')}
+                className="text-[#E07A5F] font-medium hover:underline"
+              >
+                Sign In
+              </button>
+            </p>
+          </form>
+        )}
+
+        {/* Forgot Password Form */}
+        {mode === 'forgot' && (
+          <form onSubmit={handleForgotPassword} className="modal-body">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
+                {success}
+              </div>
+            )}
+            
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="form-input"
+                placeholder="Enter your registered email"
+                required
+                data-testid="forgot-email-input"
+              />
+            </div>
+            
+            <button
+              type="submit"
+              disabled={loading || success}
+              className="w-full btn-primary py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
+              data-testid="forgot-submit-btn"
+            >
+              {loading ? (
+                <div className="spinner"></div>
+              ) : (
+                'Send Reset Link'
+              )}
+            </button>
+            
+            <p className="text-center text-sm text-slate-500 mt-4">
+              Remember your password?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange('login')}
+                className="text-[#E07A5F] font-medium hover:underline"
+              >
+                Sign In
+              </button>
+            </p>
+          </form>
+        )}
       </div>
     </div>
   );

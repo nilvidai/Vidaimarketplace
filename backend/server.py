@@ -229,6 +229,13 @@ class VendorLogin(BaseModel):
     email: str
     password: str
 
+class VendorRegister(BaseModel):
+    name: str
+    email: str
+    password: str
+    company_name: str
+    phone: Optional[str] = None
+
 class VendorResponse(BaseModel):
     id: str
     name: str
@@ -954,12 +961,102 @@ async def submit_contact_enquiry(data: ContactEnquiry):
     }
     await db.enquiries.insert_one(enquiry_doc)
     
-    # Get admin settings for email notification
-    settings = await db.settings.find_one({"type": "admin"}, {"_id": 0})
-    if settings and settings.get("contact_email") and settings.get("notify_on_enquiry", True):
-        # Email notification would be sent here
-        # For now, we just store it
-        pass
+    # Send email notification to admin
+    try:
+        # Get admin settings for email notification
+        admin_settings = await db.settings.find_one({"type": "admin"}, {"_id": 0})
+        contact_email = admin_settings.get("contact_email") if admin_settings else None
+        
+        if contact_email:
+            enquiry_type_labels = {
+                'general': 'General Inquiry',
+                'demo': 'Demo Request',
+                'pricing': 'Pricing Information',
+                'partnership': 'Partnership Opportunity',
+                'support': 'Support Request'
+            }
+            
+            # Email to admin about new enquiry
+            admin_email_html = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0;">VIDAI Marketplace</h1>
+                </div>
+                <div style="padding: 30px; background: #f8f9fa;">
+                    <h2 style="color: #1e3a5f;">New Contact Enquiry</h2>
+                    <p>You have received a new enquiry from the website.</p>
+                    
+                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold; width: 120px;">Name:</td>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee;">{data.name}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold;">Email:</td>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee;"><a href="mailto:{data.email}">{data.email}</a></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold;">Company:</td>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee;">{data.company or 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold;">Phone:</td>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee;">{data.phone or 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold;">Type:</td>
+                                <td style="padding: 10px 0; border-bottom: 1px solid #eee;">{enquiry_type_labels.get(data.enquiry_type, data.enquiry_type)}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; font-weight: bold; vertical-align: top;">Message:</td>
+                                <td style="padding: 10px 0;">{data.message}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px;">Please respond to this enquiry within 24-48 hours.</p>
+                </div>
+                <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
+                    <p>© 2024 VIDAI Marketplace. All rights reserved.</p>
+                </div>
+            </div>
+            """
+            
+            await send_email(contact_email, f"New {enquiry_type_labels.get(data.enquiry_type, 'Contact')} from {data.name}", admin_email_html)
+            
+            # Send auto-reply to the customer
+            customer_email_html = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0;">VIDAI Marketplace</h1>
+                </div>
+                <div style="padding: 30px; background: #f8f9fa;">
+                    <h2 style="color: #1e3a5f;">Thank You for Contacting Us!</h2>
+                    <p>Dear {data.name},</p>
+                    <p>Thank you for reaching out to VIDAI Marketplace. We have received your enquiry and our team will get back to you within 24-48 hours.</p>
+                    
+                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #1e3a5f; margin-top: 0;">Your Enquiry Details:</h3>
+                        <p><strong>Type:</strong> {enquiry_type_labels.get(data.enquiry_type, data.enquiry_type)}</p>
+                        <p><strong>Message:</strong> {data.message}</p>
+                    </div>
+                    
+                    <p>In the meantime, feel free to explore our marketplace or reach out to us at our contact email if you have any urgent questions.</p>
+                    
+                    <p>Best regards,<br>The VIDAI Team</p>
+                </div>
+                <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
+                    <p>© 2024 VIDAI Marketplace. All rights reserved.</p>
+                </div>
+            </div>
+            """
+            
+            await send_email(data.email, "Thank you for contacting VIDAI Marketplace", customer_email_html)
+            
+    except Exception as e:
+        logger.error(f"Failed to send contact enquiry email: {e}")
+        # Don't fail the request if email fails
     
     return {"message": "Thank you for your enquiry. We'll get back to you soon!", "enquiry_id": enquiry_id}
 
@@ -1163,6 +1260,100 @@ async def vendor_login(data: VendorLogin):
         "name": vendor["name"],
         "company_name": vendor["company_name"]
     }
+
+@api_router.post("/vendor/register")
+async def vendor_register(data: VendorRegister):
+    """Register a new vendor account"""
+    # Check if email already exists
+    existing = await db.vendors.find_one({"email": data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create vendor
+    vendor_id = str(uuid.uuid4())
+    hashed_password = hash_password(data.password)
+    
+    vendor_doc = {
+        "id": vendor_id,
+        "name": data.name,
+        "email": data.email,
+        "password": hashed_password,
+        "company_name": data.company_name,
+        "phone": data.phone,
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.vendors.insert_one(vendor_doc)
+    
+    # Generate token and return
+    token = create_token({"role": "vendor", "vendor_id": vendor_id, "email": data.email})
+    return {
+        "token": token,
+        "role": "vendor",
+        "vendor_id": vendor_id,
+        "name": data.name,
+        "company_name": data.company_name,
+        "message": "Registration successful"
+    }
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+@api_router.post("/vendor/forgot-password")
+async def vendor_forgot_password(data: ForgotPasswordRequest):
+    """Send password reset email to vendor"""
+    vendor = await db.vendors.find_one({"email": data.email})
+    
+    # Always return success to prevent email enumeration
+    if not vendor:
+        return {"message": "If an account exists with this email, you will receive password reset instructions."}
+    
+    # Generate reset token
+    reset_token = str(uuid.uuid4())
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    
+    # Store reset token in database
+    await db.password_resets.update_one(
+        {"email": data.email},
+        {
+            "$set": {
+                "email": data.email,
+                "token": reset_token,
+                "expires_at": expires_at.isoformat(),
+                "user_type": "vendor"
+            }
+        },
+        upsert=True
+    )
+    
+    # Send reset email
+    reset_link = f"{os.environ.get('FRONTEND_URL', 'https://vidaimarketplace.com')}/reset-password?token={reset_token}"
+    
+    email_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 30px; text-align: center;">
+            <h1 style="color: white; margin: 0;">VIDAI Marketplace</h1>
+        </div>
+        <div style="padding: 30px; background: #f8f9fa;">
+            <h2 style="color: #1e3a5f;">Password Reset Request</h2>
+            <p>Hello {vendor.get('name', 'User')},</p>
+            <p>We received a request to reset your password. Click the button below to set a new password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{reset_link}" style="background: #E07A5F; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
+            </div>
+            <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
+            <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+        </div>
+        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
+            <p>© 2024 VIDAI Marketplace. All rights reserved.</p>
+        </div>
+    </div>
+    """
+    
+    await send_email(data.email, "VIDAI - Password Reset Request", email_html)
+    
+    return {"message": "If an account exists with this email, you will receive password reset instructions."}
 
 @api_router.get("/vendor/profile")
 async def get_vendor_profile(user=Depends(get_vendor_user)):
