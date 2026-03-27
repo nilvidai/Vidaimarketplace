@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Package, ShoppingBag, LogOut, Plus, Edit2, Trash2, 
-  X, Image as ImageIcon, DollarSign, Boxes, Truck, ArrowLeft, Home, MessageCircle, Send
+  X, Image as ImageIcon, DollarSign, Boxes, Truck, ArrowLeft, Home, MessageCircle, Send, Upload
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -779,7 +779,10 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
     sku: '', stock_quantity: '', image_url: ''
   });
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (product) {
@@ -792,15 +795,67 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
         stock_quantity: product.stock_quantity.toString(),
         image_url: product.image_url || ''
       });
+      setPreviewImage(product.image_url || null);
     } else {
       setFormData({
         name: '', description: '', price: '', category: categories[0], 
         sku: '', stock_quantity: '', image_url: ''
       });
+      setPreviewImage(null);
     }
   }, [product, categories]);
 
   if (!isOpen) return null;
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Invalid file type. Please upload JPG, PNG, GIF, or WebP');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File too large. Maximum size is 5MB');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+
+      const response = await axios.post(`${API}/upload/image`, formDataUpload, {
+        ...authHeaders,
+        headers: {
+          ...authHeaders.headers,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const imageUrl = `${process.env.REACT_APP_BACKEND_URL}${response.data.image_url}`;
+      setFormData(prev => ({ ...prev, image_url: imageUrl }));
+      setPreviewImage(imageUrl);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData(prev => ({ ...prev, image_url: '' }));
+    setPreviewImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -935,15 +990,62 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
           </div>
 
           <div className="form-group">
-            <label className="form-label">Image URL</label>
-            <input
-              type="url"
-              value={formData.image_url}
-              onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-              className="form-input"
-              placeholder="https://example.com/image.jpg"
-              data-testid="product-image-input"
-            />
+            <label className="form-label">Product Image</label>
+            
+            {/* Image Preview */}
+            {previewImage && (
+              <div className="mb-3 relative inline-block">
+                <img 
+                  src={previewImage} 
+                  alt="Product preview" 
+                  className="w-32 h-32 object-cover rounded-lg border border-slate-200"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Upload Button */}
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleImageUpload}
+                className="hidden"
+                data-testid="product-image-input"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                {uploading ? 'Uploading...' : 'Upload Image'}
+              </button>
+              <span className="text-xs text-slate-500">JPG, PNG, GIF, WebP (max 5MB)</span>
+            </div>
+
+            {/* Or enter URL manually */}
+            <div className="mt-3">
+              <label className="text-xs text-slate-500 mb-1 block">Or enter image URL:</label>
+              <input
+                type="url"
+                value={formData.image_url}
+                onChange={(e) => {
+                  setFormData({...formData, image_url: e.target.value});
+                  setPreviewImage(e.target.value);
+                }}
+                className="form-input text-sm"
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
           </div>
 
           <div className="flex gap-3 mt-6">

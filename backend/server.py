@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, BackgroundTasks, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -15,8 +16,11 @@ from jose import jwt, JWTError
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutSessionRequest
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content
+import shutil
 
 ROOT_DIR = Path(__file__).parent
+UPLOADS_DIR = ROOT_DIR / "uploads"
+UPLOADS_DIR.mkdir(exist_ok=True)
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
@@ -35,6 +39,9 @@ STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
+
+# Mount static files for uploads
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -1163,6 +1170,37 @@ async def get_vendor_profile(user=Depends(get_vendor_user)):
     if not vendor:
         raise HTTPException(status_code=404, detail="Vendor not found")
     return vendor
+
+# ==================== IMAGE UPLOAD ====================
+
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+@api_router.post("/upload/image")
+async def upload_image(file: UploadFile = File(...), user=Depends(get_vendor_user)):
+    """Upload product image and return URL"""
+    # Validate file extension
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}")
+    
+    # Read file content
+    content = await file.read()
+    
+    # Validate file size
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 5MB")
+    
+    # Generate unique filename
+    unique_filename = f"{uuid.uuid4()}{file_ext}"
+    file_path = UPLOADS_DIR / unique_filename
+    
+    # Save file
+    with open(file_path, "wb") as buffer:
+        buffer.write(content)
+    
+    # Return the URL path (will be served via /uploads/...)
+    return {"image_url": f"/uploads/{unique_filename}"}
 
 @api_router.post("/vendor/products", response_model=ProductResponse)
 async def create_product(data: ProductCreate, user=Depends(get_vendor_user)):
