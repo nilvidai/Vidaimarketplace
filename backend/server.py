@@ -1362,6 +1362,79 @@ async def get_vendor_profile(user=Depends(get_vendor_user)):
         raise HTTPException(status_code=404, detail="Vendor not found")
     return vendor
 
+@api_router.get("/vendor/dashboard-summary")
+async def get_vendor_dashboard_summary(user=Depends(get_vendor_user)):
+    """Get vendor dashboard overview statistics"""
+    vendor_id = user["vendor_id"]
+    
+    # Get products stats
+    products = await db.products.find({"vendor_id": vendor_id}, {"_id": 0}).to_list(1000)
+    total_products = len(products)
+    approved_products = len([p for p in products if p.get("is_approved")])
+    pending_products = len([p for p in products if not p.get("is_approved")])
+    low_stock_products = len([p for p in products if p.get("stock_quantity", 0) <= 10 and p.get("is_approved")])
+    
+    # Get orders stats
+    orders = await db.orders.find({}, {"_id": 0}).to_list(10000)
+    vendor_orders = []
+    total_revenue = 0
+    total_commission_paid = 0
+    
+    for order in orders:
+        for item in order.get("items", []):
+            if item.get("vendor_id") == vendor_id:
+                vendor_orders.append(order)
+                vendor_amount = item.get("vendor_amount", item.get("subtotal", 0))
+                commission = item.get("commission_amount", 0)
+                total_revenue += vendor_amount
+                total_commission_paid += commission
+                break
+    
+    # Count orders by status
+    pending_orders = len([o for o in vendor_orders if o.get("status") in ["pending", "processing"]])
+    shipped_orders = len([o for o in vendor_orders if o.get("status") == "shipped"])
+    delivered_orders = len([o for o in vendor_orders if o.get("status") == "delivered"])
+    
+    # Get recent orders (last 5)
+    recent_orders = sorted(vendor_orders, key=lambda x: x.get("created_at", ""), reverse=True)[:5]
+    
+    # Get low stock items
+    low_stock_items = [
+        {"name": p["name"], "stock": p.get("stock_quantity", 0), "id": p["id"]}
+        for p in products 
+        if p.get("stock_quantity", 0) <= 10 and p.get("is_approved")
+    ][:5]
+    
+    # Get tickets count
+    tickets = await db.tickets.find({"vendor_id": vendor_id}, {"_id": 0}).to_list(1000)
+    open_tickets = len([t for t in tickets if t.get("status") in ["open", "in_progress"]])
+    
+    return {
+        "products": {
+            "total": total_products,
+            "approved": approved_products,
+            "pending": pending_products,
+            "low_stock": low_stock_products
+        },
+        "orders": {
+            "total": len(vendor_orders),
+            "pending": pending_orders,
+            "shipped": shipped_orders,
+            "delivered": delivered_orders
+        },
+        "revenue": {
+            "total": round(total_revenue, 2),
+            "commission_paid": round(total_commission_paid, 2),
+            "net_earnings": round(total_revenue, 2)
+        },
+        "tickets": {
+            "open": open_tickets,
+            "total": len(tickets)
+        },
+        "recent_orders": recent_orders,
+        "low_stock_items": low_stock_items
+    }
+
 # ==================== IMAGE UPLOAD ====================
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}

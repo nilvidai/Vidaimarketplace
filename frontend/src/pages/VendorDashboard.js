@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Package, ShoppingBag, LogOut, Plus, Edit2, Trash2, 
-  X, Image as ImageIcon, DollarSign, Boxes, Truck, ArrowLeft, Home, MessageCircle, Send, Upload
+  X, Image as ImageIcon, DollarSign, Boxes, Truck, ArrowLeft, Home, MessageCircle, Send, Upload,
+  TrendingUp, Clock, CheckCircle, AlertTriangle, BarChart3
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -11,13 +12,14 @@ import { useCurrency } from '../context/CurrencyContext';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const VendorDashboard = () => {
-  const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('overview');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [inventory, setInventory] = useState({ items: [], summary: {} });
+  const [dashboardSummary, setDashboardSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -35,7 +37,17 @@ const VendorDashboard = () => {
       return;
     }
     fetchData();
+    fetchDashboardSummary();
   }, [user, navigate]);
+
+  const fetchDashboardSummary = async () => {
+    try {
+      const res = await axios.get(`${API}/vendor/dashboard-summary`, authHeaders);
+      setDashboardSummary(res.data);
+    } catch (err) {
+      console.error('Failed to fetch dashboard summary');
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -106,7 +118,9 @@ const VendorDashboard = () => {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'inventory') {
+    if (tabId === 'overview') {
+      fetchDashboardSummary();
+    } else if (tabId === 'inventory') {
       fetchInventory();
     } else if (tabId === 'tickets') {
       fetchTickets();
@@ -145,6 +159,7 @@ const VendorDashboard = () => {
   };
 
   const tabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'products', label: 'Products', icon: Package, count: products.length },
     { id: 'orders', label: 'Orders', icon: ShoppingBag, count: orders.length },
     { id: 'tickets', label: 'Tickets', icon: MessageCircle, count: tickets.length },
@@ -228,6 +243,13 @@ const VendorDashboard = () => {
           </div>
         ) : (
           <>
+            {activeTab === 'overview' && (
+              <VendorOverviewTab 
+                summary={dashboardSummary}
+                formatPrice={formatPrice}
+                onNavigate={handleTabChange}
+              />
+            )}
             {activeTab === 'products' && (
               <ProductsTab 
                 products={products}
@@ -299,6 +321,219 @@ const VendorDashboard = () => {
       {toast && (
         <div className={`toast ${toast.type === 'error' ? 'bg-red-600' : 'bg-slate-900'}`}>
           {toast.message}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Vendor Overview Dashboard Tab
+const VendorOverviewTab = ({ summary, formatPrice, onNavigate }) => {
+  if (!summary) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+          Dashboard Overview
+        </h1>
+        <p className="text-slate-500 mt-1">Welcome back! Here's your business summary</p>
+      </div>
+
+      {/* Revenue Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div 
+          onClick={() => onNavigate('orders')}
+          className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white cursor-pointer hover:shadow-lg transition-all"
+          data-testid="stat-revenue"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <TrendingUp className="w-5 h-5 opacity-75" />
+          </div>
+          <div className="text-3xl font-bold">{formatPrice(summary.revenue?.total || 0)}</div>
+          <div className="text-white/80 text-sm mt-1">Total Revenue</div>
+        </div>
+
+        <div 
+          onClick={() => onNavigate('orders')}
+          className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white cursor-pointer hover:shadow-lg transition-all"
+          data-testid="stat-orders"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <ShoppingBag className="w-6 h-6" />
+            </div>
+            <span className="text-xs bg-white/20 px-2 py-1 rounded-full">{summary.orders?.pending || 0} pending</span>
+          </div>
+          <div className="text-3xl font-bold">{summary.orders?.total || 0}</div>
+          <div className="text-white/80 text-sm mt-1">Total Orders</div>
+        </div>
+
+        <div 
+          onClick={() => onNavigate('products')}
+          className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white cursor-pointer hover:shadow-lg transition-all"
+          data-testid="stat-products"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <Package className="w-6 h-6" />
+            </div>
+            <span className="text-xs bg-white/20 px-2 py-1 rounded-full">{summary.products?.approved || 0} active</span>
+          </div>
+          <div className="text-3xl font-bold">{summary.products?.total || 0}</div>
+          <div className="text-white/80 text-sm mt-1">Total Products</div>
+        </div>
+      </div>
+
+      {/* Secondary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div 
+          onClick={() => onNavigate('orders')}
+          className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-md transition-all cursor-pointer"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-5 h-5 text-yellow-600" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-slate-900">{summary.orders?.pending || 0}</div>
+          <div className="text-sm text-slate-500">Pending Orders</div>
+        </div>
+
+        <div 
+          onClick={() => onNavigate('orders')}
+          className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-md transition-all cursor-pointer"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <Truck className="w-5 h-5 text-indigo-600" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-slate-900">{summary.orders?.shipped || 0}</div>
+          <div className="text-sm text-slate-500">Shipped Orders</div>
+        </div>
+
+        <div 
+          onClick={() => onNavigate('orders')}
+          className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-md transition-all cursor-pointer"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-slate-900">{summary.orders?.delivered || 0}</div>
+          <div className="text-sm text-slate-500">Delivered</div>
+        </div>
+
+        <div 
+          onClick={() => onNavigate('products')}
+          className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-md transition-all cursor-pointer"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-5 h-5 text-orange-600" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-slate-900">{summary.products?.pending || 0}</div>
+          <div className="text-sm text-slate-500">Pending Approval</div>
+        </div>
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Orders */}
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-slate-900">Recent Orders</h3>
+            <button 
+              onClick={() => onNavigate('orders')}
+              className="text-sm text-[#E07A5F] hover:underline"
+            >
+              View All
+            </button>
+          </div>
+          {summary.recent_orders?.length > 0 ? (
+            <div className="space-y-3">
+              {summary.recent_orders.map((order, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-slate-900 text-sm">Order #{order.id?.slice(-8)}</p>
+                    <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-slate-900">{formatPrice(order.total_amount || 0)}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                      order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                      'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-500 text-sm text-center py-4">No orders yet</p>
+          )}
+        </div>
+
+        {/* Low Stock Alerts */}
+        <div className="bg-white rounded-xl border border-slate-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-slate-900">Low Stock Alerts</h3>
+            <button 
+              onClick={() => onNavigate('inventory')}
+              className="text-sm text-[#E07A5F] hover:underline"
+            >
+              View Inventory
+            </button>
+          </div>
+          {summary.low_stock_items?.length > 0 ? (
+            <div className="space-y-3">
+              {summary.low_stock_items.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                    <p className="font-medium text-slate-900 text-sm">{item.name}</p>
+                  </div>
+                  <span className="text-sm font-medium text-red-600">{item.stock} left</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" />
+              <p className="text-slate-500 text-sm">All products well stocked!</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tickets Alert */}
+      {summary.tickets?.open > 0 && (
+        <div 
+          onClick={() => onNavigate('tickets')}
+          className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-yellow-100 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <MessageCircle className="w-5 h-5 text-yellow-600" />
+            <span className="font-medium text-yellow-800">
+              You have {summary.tickets.open} open support ticket{summary.tickets.open > 1 ? 's' : ''} requiring attention
+            </span>
+          </div>
+          <span className="text-yellow-600 text-sm">View Tickets →</span>
         </div>
       )}
     </div>
