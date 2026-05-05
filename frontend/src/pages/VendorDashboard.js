@@ -1011,13 +1011,21 @@ const VendorInventoryTab = ({ inventory, formatPrice }) => {
 const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHeaders }) => {
   const [formData, setFormData] = useState({
     name: '', description: '', price: '', category: categories[0], 
-    sku: '', stock_quantity: '', image_url: ''
+    sku: '', stock_quantity: '', image_url: '', gst_percentage: '18'
   });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef(null);
+
+  const gstOptions = [
+    { value: '0', label: '0% (Exempt)' },
+    { value: '5', label: '5%' },
+    { value: '12', label: '12%' },
+    { value: '18', label: '18%' },
+    { value: '28', label: '28%' }
+  ];
 
   useEffect(() => {
     if (product) {
@@ -1028,13 +1036,14 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
         category: product.category,
         sku: product.sku,
         stock_quantity: product.stock_quantity.toString(),
-        image_url: product.image_url || ''
+        image_url: product.image_url || '',
+        gst_percentage: (product.gst_percentage || 18).toString()
       });
       setPreviewImage(product.image_url || null);
     } else {
       setFormData({
         name: '', description: '', price: '', category: categories[0], 
-        sku: '', stock_quantity: '', image_url: ''
+        sku: '', stock_quantity: '', image_url: '', gst_percentage: '18'
       });
       setPreviewImage(null);
     }
@@ -1101,7 +1110,8 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
       ...formData,
       price: parseFloat(formData.price),
       stock_quantity: parseInt(formData.stock_quantity) || 0,
-      image_url: formData.image_url || null
+      image_url: formData.image_url || null,
+      gst_percentage: parseFloat(formData.gst_percentage) || 18
     };
 
     try {
@@ -1166,7 +1176,7 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
 
           <div className="grid grid-cols-2 gap-4">
             <div className="form-group">
-              <label className="form-label">Price (USD) *</label>
+              <label className="form-label">Price *</label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -1183,6 +1193,22 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
               </div>
             </div>
             <div className="form-group">
+              <label className="form-label">GST Rate *</label>
+              <select
+                value={formData.gst_percentage}
+                onChange={(e) => setFormData({...formData, gst_percentage: e.target.value})}
+                className="form-input"
+                data-testid="product-gst-input"
+              >
+                {gstOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="form-group">
               <label className="form-label">Category *</label>
               <select
                 value={formData.category}
@@ -1195,9 +1221,6 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="form-group">
               <label className="form-label">SKU *</label>
               <input
@@ -1210,18 +1233,19 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
                 data-testid="product-sku-input"
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Stock Quantity</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.stock_quantity}
-                onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
-                className="form-input"
-                placeholder="0"
-                data-testid="product-stock-input"
-              />
-            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Stock Quantity</label>
+            <input
+              type="number"
+              min="0"
+              value={formData.stock_quantity}
+              onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
+              className="form-input"
+              placeholder="0"
+              data-testid="product-stock-input"
+            />
           </div>
 
           <div className="form-group">

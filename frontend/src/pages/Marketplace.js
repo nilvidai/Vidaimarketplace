@@ -569,9 +569,12 @@ const ProductCard = ({ product, onAddToCart, formatPrice }) => {
         <h3 className="font-semibold text-slate-900 mb-1">{product.name}</h3>
         <p className="text-xs text-slate-500 mb-2 line-clamp-2">{product.description}</p>
         
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-1">
           <span className="text-xl font-bold text-[#E07A5F]">{formatPrice(product.price)}</span>
           <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">{product.category}</span>
+        </div>
+        <div className="text-xs text-slate-500 mb-3">
+          + {product.gst_percentage || 18}% GST
         </div>
 
         {product.stock_quantity > 0 && (

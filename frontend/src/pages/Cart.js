@@ -159,14 +159,31 @@ const Cart = () => {
                     <span className="text-slate-900">{formatPrice(getCartTotal())}</span>
                   </div>
                   <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">GST</span>
+                    <span className="text-slate-900">
+                      {formatPrice(cart.reduce((sum, item) => {
+                        const price = item.product.price || 0;
+                        const qty = item.quantity || 1;
+                        const gst = item.product.gst_percentage || 18;
+                        return sum + (price * qty * gst / 100);
+                      }, 0))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Shipping</span>
                     <span className="text-slate-900">Calculated at checkout</span>
                   </div>
                   <hr className="border-slate-200" />
                   <div className="flex justify-between">
-                    <span className="font-semibold text-slate-900">Total</span>
+                    <span className="font-semibold text-slate-900">Total (incl. GST)</span>
                     <span className="font-bold text-xl text-[#E07A5F]">
-                      {formatPrice(getCartTotal())}
+                      {formatPrice(cart.reduce((sum, item) => {
+                        const price = item.product.price || 0;
+                        const qty = item.quantity || 1;
+                        const gst = item.product.gst_percentage || 18;
+                        const subtotal = price * qty;
+                        return sum + subtotal + (subtotal * gst / 100);
+                      }, 0))}
                     </span>
                   </div>
                 </div>

@@ -139,6 +139,25 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - Login modal with Forgot Password link
 - Sign Up link for vendors (not for clinics - admin managed)
 
+### Iteration 12 - May 5, 2026 - Vendor Dashboard & GST Feature
+
+**Vendor Dashboard Overview:**
+- New Overview tab as default landing page for vendors
+- Revenue, Orders, Products stat cards (gradient colored)
+- Pending/Shipped/Delivered orders metrics
+- Recent Orders section with status badges
+- Low Stock Alerts with warning indicators
+- Open tickets notification banner
+- GET /api/vendor/dashboard-summary endpoint
+
+**GST Feature:**
+- Added gst_percentage field to products (default 18%)
+- GST dropdown in product form: 0%, 5%, 12%, 18%, 28%
+- GST displayed on marketplace product cards ("+ 18% GST")
+- GST calculation in cart order summary
+- GST breakdown in orders: subtotal, GST amount, total
+- Order items store: price, gst_percentage, gst_amount, total
+
 ## Tech Stack
 - Frontend: React + Tailwind CSS + CurrencyContext for global formatting
 - Backend: FastAPI + MongoDB

@@ -289,6 +289,7 @@ class ProductCreate(BaseModel):
     sku: str
     stock_quantity: int = 0
     image_url: Optional[str] = None
+    gst_percentage: float = 18.0  # Default 18% GST
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
@@ -298,6 +299,7 @@ class ProductUpdate(BaseModel):
     sku: Optional[str] = None
     stock_quantity: Optional[int] = None
     image_url: Optional[str] = None
+    gst_percentage: Optional[float] = None
 
 class ProductResponse(BaseModel):
     id: str
@@ -315,6 +317,7 @@ class ProductResponse(BaseModel):
     commission_rate: float = 10.0  # Default 10% commission
     commission_amount: float = 0.0
     vendor_amount: float = 0.0
+    gst_percentage: float = 18.0  # Default 18% GST
     created_at: str
 
 class ProductApproval(BaseModel):
@@ -1479,6 +1482,7 @@ async def create_product(data: ProductCreate, user=Depends(get_vendor_user)):
         "sku": data.sku,
         "stock_quantity": data.stock_quantity,
         "image_url": data.image_url,
+        "gst_percentage": data.gst_percentage,
         "is_active": True,
         "is_approved": False,  # Requires admin approval
         "created_at": datetime.now(timezone.utc).isoformat()
@@ -1785,9 +1789,10 @@ async def create_order(data: OrderCreate, user=Depends(get_clinic_user)):
     if not first_product.get("is_approved") or not first_product.get("is_active", True):
         raise HTTPException(status_code=403, detail="Product is not available for purchase")
     
-    # Build order items and calculate total
+    # Build order items and calculate total with GST
     order_items = []
-    total_amount = 0.0
+    subtotal_amount = 0.0
+    total_gst_amount = 0.0
     
     for item in data.items:
         product = await db.products.find_one({"id": item.product_id})
@@ -1796,15 +1801,25 @@ async def create_order(data: OrderCreate, user=Depends(get_clinic_user)):
         if product["vendor_id"] != vendor_id:
             raise HTTPException(status_code=400, detail="All items must be from the same vendor")
         
-        item_total = product["price"] * item.quantity
+        item_subtotal = product["price"] * item.quantity
+        gst_percentage = product.get("gst_percentage", 18.0)
+        item_gst = round(item_subtotal * gst_percentage / 100, 2)
+        item_total = item_subtotal + item_gst
+        
         order_items.append({
             "product_id": product["id"],
             "name": product["name"],
             "price": product["price"],
             "quantity": item.quantity,
-            "subtotal": item_total
+            "subtotal": item_subtotal,
+            "gst_percentage": gst_percentage,
+            "gst_amount": item_gst,
+            "total": item_total
         })
-        total_amount += item_total
+        subtotal_amount += item_subtotal
+        total_gst_amount += item_gst
+    
+    total_amount = subtotal_amount + total_gst_amount
     
     order_id = str(uuid.uuid4())
     order_doc = {
@@ -1812,6 +1827,8 @@ async def create_order(data: OrderCreate, user=Depends(get_clinic_user)):
         "clinic_id": user["clinic_id"],
         "vendor_id": vendor_id,
         "items": order_items,
+        "subtotal_amount": round(subtotal_amount, 2),
+        "gst_amount": round(total_gst_amount, 2),
         "total_amount": round(total_amount, 2),
         "billing_address": data.billing_address,
         "shipping_address": data.shipping_address,
