@@ -1,5 +1,3 @@
-# Here are your Instructions
-
 # VIDAI IVF Marketplace - Server Installation Guide
 
 ## System Requirements
