@@ -345,6 +345,7 @@ const Marketplace = () => {
             setReplyMessage={setReplyMessage}
             onReply={handleTicketReply}
             formatPrice={formatPrice}
+            onGoToOrders={fetchOrders}
           />
         </main>
       ) : (
@@ -874,12 +875,14 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder, o
           {orders.map(order => (
             <div 
               key={order.id} 
-              className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => setSelectedOrder(order)}
+              className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-md transition-shadow"
               data-testid={`order-card-${order.id}`}
             >
               <div className="flex justify-between items-start">
-                <div>
+                <div 
+                  className="flex-1 cursor-pointer"
+                  onClick={() => setSelectedOrder(order)}
+                >
                   <div className="text-sm text-slate-500">Order #{order.id.slice(0, 8)}</div>
                   <div className="text-lg font-semibold text-slate-900 mt-1">
                     {formatPrice(order.total_amount)}
@@ -888,17 +891,38 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder, o
                     {order.items?.length} item(s) • {formatDate(order.created_at)}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(order.status)}`}>
-                    {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
-                  </span>
-                  {order.tracking_number && (
-                    <div className="flex items-center gap-1 text-green-600 text-sm">
-                      <Truck className="w-4 h-4" />
-                      <span>Tracking available</span>
-                    </div>
-                  )}
-                  <Eye className="w-5 h-5 text-slate-400" />
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(order.status)}`}>
+                      {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
+                    </span>
+                    {order.tracking_number && (
+                      <div className="flex items-center gap-1 text-green-600 text-sm">
+                        <Truck className="w-4 h-4" />
+                        <span>Tracking</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRaiseTicket(order);
+                      }}
+                      className="text-xs text-[#E07A5F] hover:bg-[#E07A5F]/10 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+                      data-testid={`raise-ticket-btn-${order.id}`}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      Raise Ticket
+                    </button>
+                    <button
+                      onClick={() => setSelectedOrder(order)}
+                      className="text-xs text-slate-600 hover:bg-slate-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      View Details
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -909,7 +933,7 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder, o
   );
 };
 
-const TicketsView = ({ tickets, onBack, selectedTicket, setSelectedTicket, replyMessage, setReplyMessage, onReply, formatPrice }) => {
+const TicketsView = ({ tickets, onBack, selectedTicket, setSelectedTicket, replyMessage, setReplyMessage, onReply, formatPrice, onGoToOrders }) => {
   const getStatusClass = (status) => {
     const classes = {
       open: 'bg-yellow-100 text-yellow-700',
@@ -1037,7 +1061,15 @@ const TicketsView = ({ tickets, onBack, selectedTicket, setSelectedTicket, reply
             <MessageCircle className="w-8 h-8 text-slate-400" />
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-2">No tickets yet</h3>
-          <p className="text-slate-500">You can raise a ticket from your order details</p>
+          <p className="text-slate-500 mb-6">You can raise a support ticket from your order details</p>
+          <button
+            onClick={onGoToOrders}
+            className="btn-primary px-6 py-2.5 rounded-lg font-medium inline-flex items-center gap-2"
+            data-testid="go-to-orders-btn"
+          >
+            <ClipboardList className="w-4 h-4" />
+            Go to Track Orders
+          </button>
         </div>
       ) : (
         <div className="space-y-4">
