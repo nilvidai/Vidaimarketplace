@@ -163,6 +163,25 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - GST breakdown in orders: subtotal, GST amount, total
 - Order items store: price, gst_percentage, gst_amount, total
 
+### Iteration 13 - June 10, 2026 - Inventory Auto-Deduction & Email GST
+
+**Inventory Auto-Deduction:**
+- Automatic stock deduction when payment is successful
+- deduct_inventory() function handles stock updates
+- Idempotency checks prevent double-deduction (checkout status & webhook)
+- Handles insufficient stock gracefully (caps at 0)
+- Logs all inventory changes for audit
+
+**Order Confirmation Email with GST:**
+- Email template updated with INR (₹) currency formatting
+- GST breakdown section: Subtotal, GST Amount, Grand Total
+- Per-item GST percentage badges (e.g., "18% GST")
+- Falls back to calculated subtotal if not stored
+- format_inr() helper for consistent currency display
+
+**API Updates:**
+- OrderResponse model now includes subtotal_amount and gst_amount fields
+
 ## Tech Stack
 - Frontend: React + Tailwind CSS + CurrencyContext for global formatting
 - Backend: FastAPI + MongoDB
@@ -176,7 +195,7 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - None remaining
 
 ### P1 (High)
-- Inventory auto-deduction on purchase
+- None remaining
 
 ### P2 (Medium)
 - Reorder from past purchases

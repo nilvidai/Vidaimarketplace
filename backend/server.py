@@ -455,6 +455,8 @@ class OrderResponse(BaseModel):
     vendor_id: str
     items: List[dict]
     total_amount: float
+    subtotal_amount: Optional[float] = None
+    gst_amount: Optional[float] = None
     billing_address: str
     shipping_address: str
     city: str
@@ -2207,6 +2209,10 @@ async def stripe_webhook(request: Request):
             order_id = webhook_response.metadata.get("order_id")
             
             if order_id:
+                # Check if already processed (idempotency check)
+                existing_order = await db.orders.find_one({"id": order_id})
+                already_processed = existing_order and existing_order.get("payment_status") == "paid"
+                
                 await db.orders.update_one(
                     {"id": order_id},
                     {"$set": {"payment_status": "paid", "status": "confirmed"}}
@@ -2216,18 +2222,19 @@ async def stripe_webhook(request: Request):
                     {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
                 )
                 
-                # Send order confirmation email and deduct inventory
-                order = await db.orders.find_one({"id": order_id})
-                if order:
-                    # Deduct inventory for purchased items
-                    await deduct_inventory(order)
-                    
-                    clinic = await db.clinics.find_one({"id": order["clinic_id"]})
-                    if clinic:
-                        clinic_email = clinic.get("email", "")
-                        clinic_name = clinic.get("name", "Customer")
-                        import asyncio
-                        asyncio.create_task(send_order_confirmation_email(order, clinic_email, clinic_name))
+                # Only deduct inventory and send email if not already processed
+                if not already_processed:
+                    order = await db.orders.find_one({"id": order_id})
+                    if order:
+                        # Deduct inventory for purchased items
+                        await deduct_inventory(order)
+                        
+                        clinic = await db.clinics.find_one({"id": order["clinic_id"]})
+                        if clinic:
+                            clinic_email = clinic.get("email", "")
+                            clinic_name = clinic.get("name", "Customer")
+                            import asyncio
+                            asyncio.create_task(send_order_confirmation_email(order, clinic_email, clinic_name))
         
         return {"status": "success"}
     except Exception as e:
