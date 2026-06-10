@@ -30,6 +30,7 @@ const Marketplace = () => {
   const [ticketOrder, setTicketOrder] = useState(null);
   const [ticketForm, setTicketForm] = useState({ subject: '', message: '', priority: 'medium' });
   const [replyMessage, setReplyMessage] = useState('');
+  const [gstSettings, setGstSettings] = useState({ gst_enabled: true, show_gst_on_products: true });
   
   const { user, logout, getToken } = useAuth();
   const { addToCart, getCartCount } = useCart();
@@ -44,7 +45,17 @@ const Marketplace = () => {
       return;
     }
     fetchAllProducts();
+    fetchGstSettings();
   }, [user, navigate]);
+
+  const fetchGstSettings = async () => {
+    try {
+      const res = await axios.get(`${API}/public/gst-settings`);
+      setGstSettings(res.data);
+    } catch (err) {
+      console.log('Using default GST settings');
+    }
+  };
 
   useEffect(() => {
     filterProducts();
@@ -573,9 +584,14 @@ const ProductCard = ({ product, onAddToCart, formatPrice }) => {
           <span className="text-xl font-bold text-[#E07A5F]">{formatPrice(product.price)}</span>
           <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">{product.category}</span>
         </div>
-        <div className="text-xs text-slate-500 mb-3">
-          + {product.gst_percentage || 18}% GST
-        </div>
+        {gstSettings.gst_enabled && gstSettings.show_gst_on_products && (
+          <div className="text-xs text-slate-500 mb-3">
+            + {product.gst_percentage || 18}% GST
+          </div>
+        )}
+        {(!gstSettings.gst_enabled || !gstSettings.show_gst_on_products) && (
+          <div className="mb-3"></div>
+        )}
 
         {product.stock_quantity > 0 && (
           <div className="flex items-center gap-2">

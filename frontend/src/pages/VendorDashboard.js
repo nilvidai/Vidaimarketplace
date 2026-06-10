@@ -344,7 +344,7 @@ const VendorOverviewTab = ({ summary, formatPrice, onNavigate }) => {
         <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
           Dashboard Overview
         </h1>
-        <p className="text-slate-500 mt-1">Welcome back! Here's your business summary</p>
+        <p className="text-slate-500 mt-1">Welcome back! Here is your business summary</p>
       </div>
 
       {/* Revenue Stats */}
@@ -1017,15 +1017,39 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
-  const fileInputRef = useRef(null);
-
-  const gstOptions = [
+  const [gstOptions, setGstOptions] = useState([
     { value: '0', label: '0% (Exempt)' },
     { value: '5', label: '5%' },
     { value: '12', label: '12%' },
     { value: '18', label: '18%' },
     { value: '28', label: '28%' }
-  ];
+  ]);
+  const [gstEnabled, setGstEnabled] = useState(true);
+  const fileInputRef = useRef(null);
+
+  // Fetch GST settings from API
+  useEffect(() => {
+    const fetchGstSettings = async () => {
+      try {
+        const res = await axios.get(`${API}/public/gst-settings`);
+        if (res.data.gst_rates) {
+          setGstOptions(res.data.gst_rates.map(r => ({
+            value: r.value.toString(),
+            label: r.label
+          })));
+        }
+        setGstEnabled(res.data.gst_enabled ?? true);
+        // Set default GST rate
+        const defaultRate = res.data.gst_rates?.find(r => r.is_default);
+        if (defaultRate && !product) {
+          setFormData(prev => ({ ...prev, gst_percentage: defaultRate.value.toString() }));
+        }
+      } catch (err) {
+        console.log('Using default GST options');
+      }
+    };
+    fetchGstSettings();
+  }, []);
 
   useEffect(() => {
     if (product) {
@@ -1192,19 +1216,21 @@ const ProductModal = ({ isOpen, onClose, product, categories, onSuccess, authHea
                 />
               </div>
             </div>
-            <div className="form-group">
-              <label className="form-label">GST Rate *</label>
-              <select
-                value={formData.gst_percentage}
-                onChange={(e) => setFormData({...formData, gst_percentage: e.target.value})}
-                className="form-input"
-                data-testid="product-gst-input"
-              >
-                {gstOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
+            {gstEnabled && (
+              <div className="form-group">
+                <label className="form-label">GST Rate *</label>
+                <select
+                  value={formData.gst_percentage}
+                  onChange={(e) => setFormData({...formData, gst_percentage: e.target.value})}
+                  className="form-input"
+                  data-testid="product-gst-input"
+                >
+                  {gstOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -1459,7 +1485,7 @@ const VendorTicketsTab = ({ tickets, selectedTicket, setSelectedTicket, replyMes
             <MessageCircle className="w-8 h-8 text-slate-400" />
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-2">No tickets yet</h3>
-          <p className="text-slate-500">You'll see customer support requests here</p>
+          <p className="text-slate-500">You will see customer support requests here</p>
         </div>
       ) : (
         <div className="space-y-4">

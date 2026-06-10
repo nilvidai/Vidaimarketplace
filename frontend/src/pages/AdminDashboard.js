@@ -5,7 +5,7 @@ import {
   CheckCircle, XCircle, ChevronRight, Package, ShoppingBag,
   Check, X, Image as ImageIcon, BarChart3, Boxes, DollarSign,
   ClipboardList, Truck, Eye, MessageSquare, Settings, Mail, ArrowLeft, Home, Clock,
-  CreditCard, Send, ToggleLeft, ToggleRight
+  CreditCard, Send, ToggleLeft, ToggleRight, Receipt, Percent
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -376,7 +376,7 @@ const AdminDashboard = () => {
                   <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
                     Admin Dashboard
                   </h1>
-                  <p className="text-slate-500 mt-1">Welcome back! Here's your marketplace overview.</p>
+                  <p className="text-slate-500 mt-1">Welcome back! Here is your marketplace overview.</p>
                 </div>
 
                 {/* Stats Cards */}
@@ -796,7 +796,7 @@ const VendorsTab = ({ vendors, onDelete, onAdd }) => (
           {vendors.length === 0 ? (
             <tr>
               <td colSpan="5" className="text-center py-12 text-slate-500">
-                No vendors yet. Click "Add Vendor" to create one.
+                No vendors yet. Click Add Vendor to create one.
               </td>
             </tr>
           ) : (
@@ -866,7 +866,7 @@ const ClinicsTab = ({ clinics, onDelete, onAdd }) => (
           {clinics.length === 0 ? (
             <tr>
               <td colSpan="6" className="text-center py-12 text-slate-500">
-                No clinics yet. Click "Add Clinic" to create one.
+                No clinics yet. Click Add Clinic to create one.
               </td>
             </tr>
           ) : (
@@ -2217,9 +2217,24 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
     from_email: '',
     from_name: 'VIDAI'
   });
+  const [gstSettings, setGstSettings] = useState({
+    gst_enabled: true,
+    gst_rates: [
+      { value: 0, label: '0% (Exempt)', is_default: false },
+      { value: 5, label: '5%', is_default: false },
+      { value: 12, label: '12%', is_default: false },
+      { value: 18, label: '18%', is_default: true },
+      { value: 28, label: '28%', is_default: false }
+    ],
+    default_gst_rate: 18,
+    show_gst_on_products: true,
+    gst_inclusive_pricing: false
+  });
   const [saving, setSaving] = useState(false);
   const [loadingStripe, setLoadingStripe] = useState(false);
   const [loadingSendgrid, setLoadingSendgrid] = useState(false);
+  const [loadingGst, setLoadingGst] = useState(false);
+  const [newGstRate, setNewGstRate] = useState({ value: '', label: '' });
 
   const currencyOptions = [
     { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
@@ -2249,6 +2264,8 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
       fetchStripeSettings();
     } else if (activeSection === 'sendgrid') {
       fetchSendgridSettings();
+    } else if (activeSection === 'gst') {
+      fetchGstSettings();
     }
   }, [activeSection]);
 
@@ -2330,10 +2347,94 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
     }
   };
 
+  const fetchGstSettings = async () => {
+    setLoadingGst(true);
+    try {
+      const res = await axios.get(`${API}/admin/settings/gst`, authHeaders);
+      setGstSettings({
+        gst_enabled: res.data.gst_enabled ?? true,
+        gst_rates: res.data.gst_rates || [
+          { value: 0, label: '0% (Exempt)', is_default: false },
+          { value: 5, label: '5%', is_default: false },
+          { value: 12, label: '12%', is_default: false },
+          { value: 18, label: '18%', is_default: true },
+          { value: 28, label: '28%', is_default: false }
+        ],
+        default_gst_rate: res.data.default_gst_rate || 18,
+        show_gst_on_products: res.data.show_gst_on_products ?? true,
+        gst_inclusive_pricing: res.data.gst_inclusive_pricing ?? false
+      });
+    } catch (err) {
+      console.error('Failed to fetch GST settings');
+    } finally {
+      setLoadingGst(false);
+    }
+  };
+
+  const handleSaveGst = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API}/admin/settings/gst`, gstSettings, authHeaders);
+      showToast('GST settings saved successfully');
+    } catch (err) {
+      console.error('GST save error:', err.response?.data || err.message);
+      showToast(`Failed to save GST settings: ${err.response?.data?.detail || err.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSetDefaultGst = (value) => {
+    setGstSettings(prev => ({
+      ...prev,
+      gst_rates: prev.gst_rates.map(r => ({
+        ...r,
+        is_default: r.value === value
+      })),
+      default_gst_rate: value
+    }));
+  };
+
+  const handleAddGstRate = () => {
+    if (!newGstRate.value || !newGstRate.label) return;
+    const value = parseFloat(newGstRate.value);
+    if (isNaN(value) || value < 0 || value > 100) {
+      showToast('Invalid GST rate value', 'error');
+      return;
+    }
+    if (gstSettings.gst_rates.some(r => r.value === value)) {
+      showToast('This GST rate already exists', 'error');
+      return;
+    }
+    setGstSettings(prev => ({
+      ...prev,
+      gst_rates: [...prev.gst_rates, { value, label: newGstRate.label, is_default: false }]
+    }));
+    setNewGstRate({ value: '', label: '' });
+  };
+
+  const handleRemoveGstRate = (value) => {
+    if (gstSettings.gst_rates.length <= 1) {
+      showToast('At least one GST rate is required', 'error');
+      return;
+    }
+    const rateToRemove = gstSettings.gst_rates.find(r => r.value === value);
+    setGstSettings(prev => {
+      const newRates = prev.gst_rates.filter(r => r.value !== value);
+      // If removing default, set first one as default
+      if (rateToRemove?.is_default && newRates.length > 0) {
+        newRates[0].is_default = true;
+        return { ...prev, gst_rates: newRates, default_gst_rate: newRates[0].value };
+      }
+      return { ...prev, gst_rates: newRates };
+    });
+  };
+
   const sections = [
     { id: 'general', label: 'General', icon: Settings },
     { id: 'stripe', label: 'Stripe Payments', icon: CreditCard },
-    { id: 'sendgrid', label: 'Email (SendGrid)', icon: Send }
+    { id: 'sendgrid', label: 'Email (SendGrid)', icon: Send },
+    { id: 'gst', label: 'GST Settings', icon: Receipt }
   ];
 
   return (
@@ -2712,6 +2813,155 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
                       data-testid="sendgrid-save-btn"
                     >
                       {saving ? 'Saving...' : 'Save SendGrid Settings'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* GST Settings Section */}
+          {activeSection === 'gst' && (
+            <div className="bg-white rounded-xl border border-slate-100 p-6">
+              {loadingGst ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="spinner"></div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                      <Receipt className="w-5 h-5 text-[#E07A5F]" />
+                      GST Configuration
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Configure GST rates for products. Changes will reflect across vendor and clinic portals.
+                    </p>
+                  </div>
+
+                  {/* Enable/Disable GST */}
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-slate-900">Enable GST</p>
+                      <p className="text-sm text-slate-500">Show GST options in product forms and checkout</p>
+                    </div>
+                    <button
+                      onClick={() => setGstSettings(prev => ({ ...prev, gst_enabled: !prev.gst_enabled }))}
+                      className={`p-2 rounded-lg transition-colors ${gstSettings.gst_enabled ? 'bg-green-500 text-white' : 'bg-slate-300 text-slate-600'}`}
+                    >
+                      {gstSettings.gst_enabled ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+                    </button>
+                  </div>
+
+                  {gstSettings.gst_enabled && (
+                    <>
+                      {/* GST Display Options */}
+                      <div className="space-y-4">
+                        <h3 className="font-medium text-slate-900">Display Options</h3>
+                        
+                        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={gstSettings.show_gst_on_products}
+                            onChange={(e) => setGstSettings(prev => ({ ...prev, show_gst_on_products: e.target.checked }))}
+                            className="w-4 h-4 text-[#E07A5F] rounded"
+                          />
+                          <div>
+                            <p className="font-medium text-slate-900">Show GST on Products</p>
+                            <p className="text-sm text-slate-500">Display GST percentage on product cards in marketplace</p>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={gstSettings.gst_inclusive_pricing}
+                            onChange={(e) => setGstSettings(prev => ({ ...prev, gst_inclusive_pricing: e.target.checked }))}
+                            className="w-4 h-4 text-[#E07A5F] rounded"
+                          />
+                          <div>
+                            <p className="font-medium text-slate-900">GST Inclusive Pricing</p>
+                            <p className="text-sm text-slate-500">Product prices already include GST (no additional GST calculation)</p>
+                          </div>
+                        </label>
+                      </div>
+
+                      {/* GST Rates */}
+                      <div className="space-y-4">
+                        <h3 className="font-medium text-slate-900">GST Rates</h3>
+                        
+                        <div className="space-y-2">
+                          {gstSettings.gst_rates.map((rate) => (
+                            <div key={rate.value} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <Percent className="w-4 h-4 text-slate-400" />
+                                <span className="font-medium text-slate-900">{rate.label}</span>
+                                {rate.is_default && (
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Default</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {!rate.is_default && (
+                                  <button
+                                    onClick={() => handleSetDefaultGst(rate.value)}
+                                    className="text-xs text-[#E07A5F] hover:underline"
+                                  >
+                                    Set as Default
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleRemoveGstRate(rate.value)}
+                                  className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Add New Rate */}
+                        <div className="p-4 border border-dashed border-slate-300 rounded-lg">
+                          <p className="text-sm font-medium text-slate-700 mb-3">Add Custom GST Rate</p>
+                          <div className="flex gap-3">
+                            <input
+                              type="number"
+                              placeholder="Rate (%)"
+                              value={newGstRate.value}
+                              onChange={(e) => setNewGstRate(prev => ({ ...prev, value: e.target.value }))}
+                              className="form-input w-24"
+                              min="0"
+                              max="100"
+                              step="0.5"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Label (e.g., 15%)"
+                              value={newGstRate.label}
+                              onChange={(e) => setNewGstRate(prev => ({ ...prev, label: e.target.value }))}
+                              className="form-input flex-1"
+                            />
+                            <button
+                              onClick={handleAddGstRate}
+                              className="btn-secondary px-4 py-2 rounded-lg"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Save Button */}
+                  <div className="flex justify-end pt-4 border-t border-slate-100">
+                    <button
+                      onClick={handleSaveGst}
+                      disabled={saving}
+                      className="btn-primary px-6 py-2.5 rounded-lg font-medium"
+                      data-testid="gst-save-btn"
+                    >
+                      {saving ? 'Saving...' : 'Save GST Settings'}
                     </button>
                   </div>
                 </div>

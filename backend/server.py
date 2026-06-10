@@ -1245,6 +1245,89 @@ async def update_sendgrid_settings(data: SendGridSettings, admin=Depends(get_adm
     )
     return {"message": "SendGrid settings updated successfully"}
 
+# GST Settings Models
+class GSTRate(BaseModel):
+    value: float
+    label: str
+    is_default: bool = False
+
+class GSTSettings(BaseModel):
+    gst_enabled: bool = True
+    gst_rates: List[GSTRate] = [
+        GSTRate(value=0, label="0% (Exempt)", is_default=False),
+        GSTRate(value=5, label="5%", is_default=False),
+        GSTRate(value=12, label="12%", is_default=False),
+        GSTRate(value=18, label="18%", is_default=True),
+        GSTRate(value=28, label="28%", is_default=False)
+    ]
+    default_gst_rate: float = 18.0
+    show_gst_on_products: bool = True
+    gst_inclusive_pricing: bool = False  # If True, prices include GST
+
+@api_router.get("/admin/settings/gst")
+async def get_gst_settings(admin=Depends(get_admin_user)):
+    """Get GST configuration settings"""
+    settings = await db.settings.find_one({"type": "gst"}, {"_id": 0})
+    if not settings:
+        # Return default settings
+        return {
+            "type": "gst",
+            "gst_enabled": True,
+            "gst_rates": [
+                {"value": 0, "label": "0% (Exempt)", "is_default": False},
+                {"value": 5, "label": "5%", "is_default": False},
+                {"value": 12, "label": "12%", "is_default": False},
+                {"value": 18, "label": "18%", "is_default": True},
+                {"value": 28, "label": "28%", "is_default": False}
+            ],
+            "default_gst_rate": 18.0,
+            "show_gst_on_products": True,
+            "gst_inclusive_pricing": False
+        }
+    return settings
+
+@api_router.put("/admin/settings/gst")
+async def update_gst_settings(data: GSTSettings, admin=Depends(get_admin_user)):
+    """Update GST configuration settings"""
+    # Convert GSTRate objects to dicts
+    gst_rates_dict = [{"value": r.value, "label": r.label, "is_default": r.is_default} for r in data.gst_rates]
+    
+    settings_doc = {
+        "type": "gst",
+        "gst_enabled": data.gst_enabled,
+        "gst_rates": gst_rates_dict,
+        "default_gst_rate": data.default_gst_rate,
+        "show_gst_on_products": data.show_gst_on_products,
+        "gst_inclusive_pricing": data.gst_inclusive_pricing,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.settings.update_one(
+        {"type": "gst"},
+        {"$set": settings_doc},
+        upsert=True
+    )
+    return {"message": "GST settings updated successfully"}
+
+@api_router.get("/public/gst-settings")
+async def get_public_gst_settings():
+    """Public endpoint to get GST settings for vendors and clinics"""
+    settings = await db.settings.find_one({"type": "gst"}, {"_id": 0})
+    if not settings:
+        return {
+            "gst_enabled": True,
+            "gst_rates": [
+                {"value": 0, "label": "0% (Exempt)", "is_default": False},
+                {"value": 5, "label": "5%", "is_default": False},
+                {"value": 12, "label": "12%", "is_default": False},
+                {"value": 18, "label": "18%", "is_default": True},
+                {"value": 28, "label": "28%", "is_default": False}
+            ],
+            "default_gst_rate": 18.0,
+            "show_gst_on_products": True,
+            "gst_inclusive_pricing": False
+        }
+    return settings
+
 # ==================== VENDOR ROUTES ====================
 
 @api_router.post("/vendor/login")
