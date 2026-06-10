@@ -114,12 +114,17 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 - Toggle between Login/Signup/Forgot Password modes
 - POST /api/vendor/register endpoint
 
-**Forgot Password:**
+**Forgot Password & Reset Password (Complete Flow):**
 - Added forgot password flow for vendors
 - POST /api/vendor/forgot-password endpoint
 - Generates reset token (expires in 1 hour)
 - Sends password reset email via SendGrid
 - Stores reset tokens in password_resets collection
+- **(June 10, 2026)** Added Reset Password page (/reset-password)
+- GET /api/vendor/reset-password/validate - Validates token before showing form
+- POST /api/vendor/reset-password - Resets password with valid token
+- Token deleted after successful use (security measure)
+- Frontend handles: invalid/expired tokens, password validation, success state
 
 **Contact Sales Email Notifications:**
 - Contact form now sends emails via configured SendGrid
@@ -172,7 +177,6 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 
 ### P1 (High)
 - Inventory auto-deduction on purchase
-- Vendor analytics dashboard
 
 ### P2 (Medium)
 - Reorder from past purchases
@@ -208,6 +212,10 @@ AI-Powered IVF Healthcare Marketplace connecting clinics with trusted vendors fo
 
 ### Vendor
 - POST /api/vendor/login
+- POST /api/vendor/register
+- POST /api/vendor/forgot-password
+- GET /api/vendor/reset-password/validate
+- POST /api/vendor/reset-password
 - GET/POST/PUT/DELETE /api/vendor/products
 - GET /api/vendor/orders
 - PUT /api/vendor/orders/{id}/status

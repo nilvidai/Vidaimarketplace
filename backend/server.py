@@ -1441,6 +1441,62 @@ async def vendor_forgot_password(data: ForgotPasswordRequest):
     
     return {"message": "If an account exists with this email, you will receive password reset instructions."}
 
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+@api_router.post("/vendor/reset-password")
+async def vendor_reset_password(data: ResetPasswordRequest):
+    """Reset vendor password using reset token"""
+    # Find reset token
+    reset_record = await db.password_resets.find_one({"token": data.token})
+    
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check if token is expired
+    expires_at = datetime.fromisoformat(reset_record["expires_at"].replace('Z', '+00:00'))
+    if datetime.now(timezone.utc) > expires_at:
+        # Delete expired token
+        await db.password_resets.delete_one({"token": data.token})
+        raise HTTPException(status_code=400, detail="Reset token has expired. Please request a new one.")
+    
+    # Validate password length
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
+    
+    # Hash new password
+    hashed_password = bcrypt.hashpw(data.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    # Update vendor password
+    result = await db.vendors.update_one(
+        {"email": reset_record["email"]},
+        {"$set": {"password": hashed_password}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Vendor account not found")
+    
+    # Delete used reset token
+    await db.password_resets.delete_one({"token": data.token})
+    
+    return {"message": "Password has been reset successfully. You can now log in with your new password."}
+
+@api_router.get("/vendor/reset-password/validate")
+async def validate_reset_token(token: str):
+    """Validate if a reset token is still valid"""
+    reset_record = await db.password_resets.find_one({"token": token})
+    
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+    
+    expires_at = datetime.fromisoformat(reset_record["expires_at"].replace('Z', '+00:00'))
+    if datetime.now(timezone.utc) > expires_at:
+        await db.password_resets.delete_one({"token": token})
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    return {"valid": True, "email": reset_record["email"]}
+
 @api_router.get("/vendor/profile")
 async def get_vendor_profile(user=Depends(get_vendor_user)):
     vendor = await db.vendors.find_one({"id": user["vendor_id"]}, {"_id": 0, "password": 0})

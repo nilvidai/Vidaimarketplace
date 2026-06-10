@@ -17,6 +17,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Orders from "./pages/Orders";
+import ResetPassword from "./pages/ResetPassword";
 
 // Protected Route Components
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -47,6 +48,7 @@ function AppRoutes() {
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/admin" element={<AdminLogin />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Admin Routes */}
       <Route 

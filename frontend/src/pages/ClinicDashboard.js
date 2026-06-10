@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Home, Package, ShoppingCart, Bell, Tag, TrendingUp, ArrowRight, 
   Truck, CheckCircle, Clock, Gift, Percent, ChevronRight, RefreshCw,
-  DollarSign, BarChart3, Users, ShoppingBag, ExternalLink, X, ArrowLeft
+  DollarSign, BarChart3, Users, ShoppingBag, ExternalLink, X, ArrowLeft,
+  MessageCircle, Send, AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -17,8 +18,16 @@ const ClinicDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [offers, setOffers] = useState([]);
   const [pricingTrends, setPricingTrends] = useState(null);
+  const [tickets, setTickets] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [ticketOrder, setTicketOrder] = useState(null);
+  const [ticketForm, setTicketForm] = useState({ subject: '', message: '', priority: 'medium' });
+  const [replyMessage, setReplyMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState(null);
+  const [toast, setToast] = useState(null);
   
   const navigate = useNavigate();
   const { user, getToken, logout } = useAuth();
@@ -52,6 +61,84 @@ const ClinicDashboard = () => {
       console.error('Failed to fetch dashboard data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTickets = async () => {
+    try {
+      const res = await axios.get(`${API}/tickets`, authHeaders);
+      setTickets(res.data);
+    } catch (err) {
+      console.error('Failed to fetch tickets:', err);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get(`${API}/clinic/orders`, authHeaders);
+      setOrders(res.data);
+    } catch (err) {
+      console.error('Failed to fetch orders:', err);
+    }
+  };
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'tickets') {
+      fetchTickets();
+      fetchOrders();
+    }
+  };
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const openTicketModal = (order) => {
+    setTicketOrder(order);
+    setTicketForm({ subject: '', message: '', priority: 'medium' });
+    setShowTicketModal(true);
+  };
+
+  const handleCreateTicket = async () => {
+    if (!ticketForm.subject || !ticketForm.message) {
+      showToast('Please fill in all fields', 'error');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/tickets`, {
+        order_id: ticketOrder.id,
+        subject: ticketForm.subject,
+        message: ticketForm.message,
+        priority: ticketForm.priority
+      }, authHeaders);
+      
+      showToast('Ticket created successfully');
+      setShowTicketModal(false);
+      fetchTickets();
+    } catch (err) {
+      showToast('Failed to create ticket', 'error');
+    }
+  };
+
+  const handleTicketReply = async () => {
+    if (!replyMessage.trim() || !selectedTicket) return;
+
+    try {
+      await axios.post(`${API}/tickets/${selectedTicket.id}/reply`, {
+        message: replyMessage
+      }, authHeaders);
+      
+      setReplyMessage('');
+      fetchTickets();
+      // Update selected ticket
+      const updated = tickets.find(t => t.id === selectedTicket.id);
+      if (updated) setSelectedTicket(updated);
+      showToast('Reply sent');
+    } catch (err) {
+      showToast('Failed to send reply', 'error');
     }
   };
 
@@ -98,6 +185,8 @@ const ClinicDashboard = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Home },
+    { id: 'orders', label: 'My Orders', icon: ShoppingBag },
+    { id: 'tickets', label: 'Support Tickets', icon: MessageCircle, badge: tickets.filter(t => t.status === 'open').length },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: notifications.length },
     { id: 'offers', label: 'Offers', icon: Tag, badge: offers.length },
     { id: 'pricing', label: 'Pricing Trends', icon: TrendingUp }
@@ -177,7 +266,7 @@ const ClinicDashboard = () => {
           {tabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                 activeTab === tab.id
                   ? 'bg-[#E07A5F] text-white shadow-lg'
@@ -608,9 +697,321 @@ const ClinicDashboard = () => {
                 </div>
               </div>
             )}
+
+            {/* Orders Tab */}
+            {activeTab === 'orders' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900">My Orders</h2>
+                    <p className="text-slate-500 text-sm mt-1">View and manage your orders</p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/marketplace')}
+                    className="btn-primary px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Go to Marketplace
+                  </button>
+                </div>
+
+                {orders.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <ShoppingBag className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">No orders yet</h3>
+                    <p className="text-slate-500 mb-6">Start shopping to place your first order</p>
+                    <button
+                      onClick={() => navigate('/marketplace')}
+                      className="btn-primary px-6 py-2.5 rounded-lg font-medium inline-flex items-center gap-2"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      Browse Marketplace
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map(order => (
+                      <div key={order.id} className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="text-sm text-slate-500">Order #{order.id?.slice(0, 8)}</div>
+                            <div className="text-lg font-semibold text-slate-900 mt-1">
+                              {formatPrice(order.total_amount)}
+                            </div>
+                            <div className="text-sm text-slate-500 mt-1">
+                              {order.items?.length} item(s) • {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                              order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                              order.status === 'confirmed' ? 'bg-indigo-100 text-indigo-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
+                            </span>
+                            <button
+                              onClick={() => openTicketModal(order)}
+                              className="text-sm text-[#E07A5F] hover:bg-[#E07A5F]/10 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+                              data-testid={`raise-ticket-${order.id}`}
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                              Raise Ticket
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Support Tickets Tab */}
+            {activeTab === 'tickets' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900">Support Tickets</h2>
+                    <p className="text-slate-500 text-sm mt-1">View and manage your support requests</p>
+                  </div>
+                  {orders.length > 0 && (
+                    <button
+                      onClick={() => handleTabChange('orders')}
+                      className="btn-secondary px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Create New Ticket
+                    </button>
+                  )}
+                </div>
+
+                {tickets.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageCircle className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">No support tickets</h3>
+                    <p className="text-slate-500 mb-6">You can raise a support ticket from your orders</p>
+                    <button
+                      onClick={() => handleTabChange('orders')}
+                      className="btn-primary px-6 py-2.5 rounded-lg font-medium inline-flex items-center gap-2"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      View My Orders
+                    </button>
+                  </div>
+                ) : selectedTicket ? (
+                  /* Ticket Detail View */
+                  <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+                    <div className="p-6 border-b border-slate-100">
+                      <button
+                        onClick={() => setSelectedTicket(null)}
+                        className="text-slate-500 hover:text-slate-700 text-sm mb-4 flex items-center gap-1"
+                      >
+                        ← Back to tickets
+                      </button>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-xl font-semibold text-slate-900">{selectedTicket.subject}</h3>
+                          <p className="text-sm text-slate-500 mt-1">
+                            Ticket #{selectedTicket.id?.slice(0, 8)} • Order #{selectedTicket.order_id?.slice(0, 8)}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            selectedTicket.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                            selectedTicket.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                            selectedTicket.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                            'bg-slate-100 text-slate-700'
+                          }`}>
+                            {selectedTicket.status?.replace('_', ' ')}
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            selectedTicket.priority === 'high' ? 'bg-red-100 text-red-700' :
+                            selectedTicket.priority === 'medium' ? 'bg-orange-100 text-orange-700' :
+                            'bg-slate-100 text-slate-700'
+                          }`}>
+                            {selectedTicket.priority}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Messages */}
+                    <div className="p-6 max-h-96 overflow-y-auto space-y-4">
+                      {selectedTicket.messages?.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.role === 'clinic' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] rounded-xl p-4 ${
+                            msg.role === 'clinic' ? 'bg-[#E07A5F] text-white' : 'bg-slate-100 text-slate-900'
+                          }`}>
+                            <p className="text-sm">{msg.content}</p>
+                            <p className={`text-xs mt-2 ${msg.role === 'clinic' ? 'text-white/70' : 'text-slate-500'}`}>
+                              {msg.role === 'clinic' ? 'You' : msg.role === 'vendor' ? 'Vendor' : 'Admin'} • {new Date(msg.timestamp).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Reply Input */}
+                    {selectedTicket.status !== 'closed' && (
+                      <div className="p-6 border-t border-slate-100 bg-slate-50">
+                        <div className="flex gap-3">
+                          <input
+                            type="text"
+                            value={replyMessage}
+                            onChange={(e) => setReplyMessage(e.target.value)}
+                            placeholder="Type your reply..."
+                            className="form-input flex-1"
+                            onKeyPress={(e) => e.key === 'Enter' && handleTicketReply()}
+                          />
+                          <button
+                            onClick={handleTicketReply}
+                            disabled={!replyMessage.trim()}
+                            className="btn-primary px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
+                          >
+                            <Send className="w-4 h-4" />
+                            Send
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Tickets List */
+                  <div className="space-y-4">
+                    {tickets.map(ticket => (
+                      <div 
+                        key={ticket.id}
+                        onClick={() => setSelectedTicket(ticket)}
+                        className="bg-white rounded-xl border border-slate-100 p-6 hover:shadow-md transition-shadow cursor-pointer"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold text-slate-900">{ticket.subject}</h3>
+                            <p className="text-sm text-slate-500 mt-1">
+                              Order #{ticket.order_id?.slice(0, 8)} • {ticket.messages?.length || 0} messages
+                            </p>
+                            <p className="text-xs text-slate-400 mt-2">
+                              Last updated: {ticket.updated_at ? new Date(ticket.updated_at).toLocaleString() : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              ticket.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
+                              ticket.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                              ticket.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {ticket.status?.replace('_', ' ')}
+                            </span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              ticket.priority === 'high' ? 'bg-red-100 text-red-700' :
+                              ticket.priority === 'medium' ? 'bg-orange-100 text-orange-700' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {ticket.priority}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
+
+      {/* Ticket Creation Modal */}
+      {showTicketModal && ticketOrder && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowTicketModal(false)}>
+          <div className="bg-white rounded-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-slate-100">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-slate-900">Raise Support Ticket</h2>
+                <button onClick={() => setShowTicketModal(false)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="bg-slate-50 rounded-lg p-4">
+                <div className="text-sm text-slate-500">Order</div>
+                <div className="font-medium text-slate-900">
+                  #{ticketOrder.id?.slice(0, 8)} - {formatPrice(ticketOrder.total_amount)}
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Subject *</label>
+                <input
+                  type="text"
+                  value={ticketForm.subject}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, subject: e.target.value }))}
+                  className="form-input"
+                  placeholder="Brief description of your issue"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Priority</label>
+                <select
+                  value={ticketForm.priority}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, priority: e.target.value }))}
+                  className="form-input"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Message *</label>
+                <textarea
+                  value={ticketForm.message}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, message: e.target.value }))}
+                  className="form-input"
+                  rows={4}
+                  placeholder="Describe your issue in detail..."
+                />
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-slate-100 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowTicketModal(false)}
+                className="btn-secondary px-4 py-2 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateTicket}
+                disabled={!ticketForm.subject || !ticketForm.message}
+                className="btn-primary px-6 py-2 rounded-lg disabled:opacity-50"
+              >
+                Create Ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+          toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'
+        } text-white`}>
+          {toast.message}
+        </div>
+      )}
 
       {/* Offer Detail Modal */}
       {selectedOffer && (
