@@ -2921,33 +2921,53 @@ const SettingsTab = ({ settings, authHeaders, showToast, onUpdate }) => {
                         </div>
 
                         {/* Add New Rate */}
-                        <div className="p-4 border border-dashed border-slate-300 rounded-lg">
+                        <div className="p-4 border border-dashed border-slate-300 rounded-lg bg-slate-50/50">
                           <p className="text-sm font-medium text-slate-700 mb-3">Add Custom GST Rate</p>
-                          <div className="flex gap-3">
-                            <input
-                              type="number"
-                              placeholder="Rate (%)"
-                              value={newGstRate.value}
-                              onChange={(e) => setNewGstRate(prev => ({ ...prev, value: e.target.value }))}
-                              className="form-input w-24"
-                              min="0"
-                              max="100"
-                              step="0.5"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Label (e.g., 15%)"
-                              value={newGstRate.label}
-                              onChange={(e) => setNewGstRate(prev => ({ ...prev, label: e.target.value }))}
-                              className="form-input flex-1"
-                            />
-                            <button
-                              onClick={handleAddGstRate}
-                              className="btn-secondary px-4 py-2 rounded-lg"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <label className="text-xs text-slate-500 mb-1 block">Rate Value (%)</label>
+                              <input
+                                type="number"
+                                placeholder="e.g., 15"
+                                value={newGstRate.value}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setNewGstRate(prev => ({ 
+                                    ...prev, 
+                                    value: val,
+                                    label: val ? `${val}%` : ''
+                                  }));
+                                }}
+                                className="form-input w-full"
+                                min="0"
+                                max="100"
+                                step="0.5"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-slate-500 mb-1 block">Display Label</label>
+                              <input
+                                type="text"
+                                placeholder="e.g., 15% or 15% (Special)"
+                                value={newGstRate.label}
+                                onChange={(e) => setNewGstRate(prev => ({ ...prev, label: e.target.value }))}
+                                className="form-input w-full"
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <button
+                                onClick={handleAddGstRate}
+                                disabled={!newGstRate.value || !newGstRate.label}
+                                className="btn-primary px-4 py-2 rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Plus className="w-4 h-4" />
+                                Add Rate
+                              </button>
+                            </div>
                           </div>
+                          <p className="text-xs text-slate-400 mt-2">
+                            Enter the GST percentage and a display label. The label will appear in dropdown menus.
+                          </p>
                         </div>
                       </div>
                     </>
