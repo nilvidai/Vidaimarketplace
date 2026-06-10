@@ -321,7 +321,7 @@ const Marketplace = () => {
         </div>
       ) : view === 'purchases' ? (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <PurchasesList purchases={purchases} onBack={goBack} />
+          <PurchasesList purchases={purchases} onBack={goBack} formatPrice={formatPrice} />
         </main>
       ) : view === 'orders' ? (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -331,6 +331,7 @@ const Marketplace = () => {
             selectedOrder={selectedOrder}
             setSelectedOrder={setSelectedOrder}
             onRaiseTicket={openTicketModal}
+            formatPrice={formatPrice}
           />
         </main>
       ) : view === 'tickets' ? (
@@ -343,6 +344,7 @@ const Marketplace = () => {
             replyMessage={replyMessage}
             setReplyMessage={setReplyMessage}
             onReply={handleTicketReply}
+            formatPrice={formatPrice}
           />
         </main>
       ) : (
@@ -433,6 +435,7 @@ const Marketplace = () => {
                     product={product} 
                     onAddToCart={handleAddToCart}
                     formatPrice={formatPrice}
+                    gstSettings={gstSettings}
                   />
                 ))}
               </div>
@@ -524,7 +527,7 @@ const Marketplace = () => {
   );
 };
 
-const ProductCard = ({ product, onAddToCart, formatPrice }) => {
+const ProductCard = ({ product, onAddToCart, formatPrice, gstSettings }) => {
   const [quantity, setQuantity] = useState(1);
   const [imageError, setImageError] = useState(false);
 
@@ -625,7 +628,7 @@ const ProductCard = ({ product, onAddToCart, formatPrice }) => {
   );
 };
 
-const PurchasesList = ({ purchases, onBack }) => (
+const PurchasesList = ({ purchases, onBack, formatPrice }) => (
   <div>
     <div className="flex items-center gap-4 mb-8">
       <button
@@ -683,7 +686,7 @@ const PurchasesList = ({ purchases, onBack }) => (
   </div>
 );
 
-const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder, onRaiseTicket }) => {
+const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder, onRaiseTicket, formatPrice }) => {
   const getStatusClass = (status) => {
     const classes = {
       pending: 'status-pending',
@@ -906,7 +909,7 @@ const OrdersTrackingView = ({ orders, onBack, selectedOrder, setSelectedOrder, o
   );
 };
 
-const TicketsView = ({ tickets, onBack, selectedTicket, setSelectedTicket, replyMessage, setReplyMessage, onReply }) => {
+const TicketsView = ({ tickets, onBack, selectedTicket, setSelectedTicket, replyMessage, setReplyMessage, onReply, formatPrice }) => {
   const getStatusClass = (status) => {
     const classes = {
       open: 'bg-yellow-100 text-yellow-700',
