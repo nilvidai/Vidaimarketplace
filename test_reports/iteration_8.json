@@ -1,0 +1,61 @@
+{
+  "summary": "Backend testing of newly implemented (1) inventory auto-deduction after successful payment and (2) order confirmation email GST breakdown with INR formatting. Created pytest suite with 7 tests covering: format_inr helper, deduct_inventory() function (happy path, insufficient stock cap-at-zero, multiple items), email template HTML generation (GST badges, subtotal/GST/total INR formatting, fallback calculation), and end-to-end flow (clinic creates order via API → simulate paid → verify stock decreased + verify GST fields persisted in DB). ALL 7 TESTS PASSED.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/clinic/orders (POST) response & OrderResponse model",
+        "issue": "OrderResponse Pydantic model (server.py lines 452-473) does not expose 'subtotal_amount' or 'gst_amount' fields. They are correctly persisted to DB by create_order, but stripped from the API response. As a result clinic UI cannot read the GST breakdown of a created order from the create/get order endpoints (only total_amount is returned). The email template reads from the DB document directly so emails are unaffected, but UI integration for order details will silently drop GST data."
+      },
+      {
+        "endpoint": "/api/checkout/status & /api/webhook/stripe",
+        "issue": "Idempotency is correct in get_checkout_status (checks payment_status != 'paid' before deducting), but the stripe_webhook handler at lines 2189-2235 does NOT perform the same idempotency check before calling deduct_inventory(). If the webhook fires after the checkout/status polling already processed the order, deduct_inventory will be invoked twice → stock could be decremented twice. Recommend gating webhook deduction on the same 'was previously not paid' check."
+      },
+      {
+        "endpoint": "deduct_inventory (server.py L107-140)",
+        "issue": "Non-atomic in the fallback path: when stock < quantity, function does an UPDATE_ONE to set stock=0 separately from the initial conditional update. Two concurrent paid notifications for the same order could still race. Also: insufficient-stock case still returns True (success) — caller cannot distinguish 'fully deducted' from 'partially deducted/sold out'."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_inventory_and_email_gst.py",
+    "/app/test_reports/pytest/inventory_email_gst_results.xml"
+  ],
+  "action_items": [
+    "Add subtotal_amount and gst_amount to OrderResponse Pydantic model so the clinic UI can display GST breakdown on order detail pages (consistency with email).",
+    "Add idempotency guard inside stripe_webhook before calling deduct_inventory() (mirror the 'payment_status != paid' check from get_checkout_status) to prevent double-deduction when both checkout/status polling and webhook fire for the same order.",
+    "Consider returning a structured result from deduct_inventory (e.g., per-item deducted/short) so the caller can flag partial fulfilment to admin/vendor."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 2745 lines - exceeds 700-line guideline. Should be split into modules (auth, orders, products, payments, email).",
+    "Duplicate inventory-deduction call sites (get_checkout_status + stripe_webhook) share email + clinic lookup logic - extract to a helper finalize_paid_order(order) to keep both paths in sync.",
+    "OrderResponse model omitting subtotal_amount/gst_amount despite being part of the data model is an oversight given GST is core to this feature."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_inventory_and_email_gst.py",
+    "/app/backend/tests/pytest.ini"
+  ],
+  "success_rate": {
+    "backend": "100% (7/7 pytest cases passed)",
+    "frontend": "not tested (backend-only request)"
+  },
+  "test_credentials": {
+    "admin": {"username": "admin", "password": "vidai@01"},
+    "clinic": {"email": "clinic1@test.com", "password": "test123"},
+    "vendor": {"email": "vendor1@test.com", "password": "test123"}
+  },
+  "seed_data_creation": "Tests insert and clean up TEST_PROD_* products and one TEST_ORD_* order within fixtures - no permanent seed data left behind.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Test file at /app/backend/tests/test_inventory_and_email_gst.py covers: format_inr unit, deduct_inventory direct calls (basic / insufficient / multi-item), send_order_confirmation_email HTML inspection via monkey-patched send_email (captures html_content and asserts INR ₹, Subtotal, GST, Grand Total, per-item 'X% GST' badges), and an end-to-end clinic API order creation followed by simulated paid->deduct_inventory verifying stock decrement and that subtotal_amount/gst_amount are stored in the DB document. pytest.ini sets asyncio_default_fixture_loop_scope=session so motor's global db client stays bound to one loop. Note that OrderResponse doesn't include subtotal_amount/gst_amount - main agent should add them.",
+  "features_verified": {
+    "inventory_auto_deduction": "WORKING - deduct_inventory correctly decrements stock_quantity for each item; handles insufficient stock by capping at 0; works for multi-item orders; is invoked from both get_checkout_status (idempotent) and stripe_webhook (not idempotent - minor issue).",
+    "email_gst_breakdown_inr": "WORKING - send_order_confirmation_email HTML contains '₹' symbol, Subtotal/GST/Grand Total rows formatted with format_inr (e.g. ₹749.98, ₹126.00, ₹875.98), and per-item GST percentage badges (e.g. '18% GST', '12% GST'). Falls back to deriving subtotal from items/total when subtotal_amount is missing on the order doc.",
+    "order_doc_gst_persistence": "WORKING - create_order stores subtotal_amount, gst_amount, total_amount, and per-item gst_percentage / gst_amount in MongoDB."
+  }
+}

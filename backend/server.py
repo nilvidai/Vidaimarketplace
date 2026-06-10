@@ -104,18 +104,79 @@ async def send_email(to_email: str, subject: str, html_content: str):
         logger.error(f"Failed to send email: {str(e)}")
         return False
 
+async def deduct_inventory(order: dict):
+    """Deduct stock from products after successful payment"""
+    try:
+        items = order.get("items", [])
+        for item in items:
+            product_id = item.get("product_id")
+            quantity = item.get("quantity", 1)
+            
+            if product_id:
+                # Deduct stock, ensuring it doesn't go below 0
+                result = await db.products.update_one(
+                    {"id": product_id, "stock_quantity": {"$gte": quantity}},
+                    {"$inc": {"stock_quantity": -quantity}}
+                )
+                
+                if result.modified_count > 0:
+                    logger.info(f"Inventory deducted: Product {product_id}, Quantity: {quantity}")
+                else:
+                    # Log if stock was insufficient (edge case)
+                    product = await db.products.find_one({"id": product_id})
+                    current_stock = product.get("stock_quantity", 0) if product else 0
+                    logger.warning(f"Insufficient stock for product {product_id}. Required: {quantity}, Available: {current_stock}")
+                    # Still deduct whatever is available
+                    if current_stock > 0:
+                        await db.products.update_one(
+                            {"id": product_id},
+                            {"$set": {"stock_quantity": 0}}
+                        )
+        
+        logger.info(f"Inventory deduction completed for order {order.get('id', 'unknown')}")
+        return True
+    except Exception as e:
+        logger.error(f"Error deducting inventory for order {order.get('id', 'unknown')}: {str(e)}")
+        return False
+
+def format_inr(amount):
+    """Format amount as Indian Rupees"""
+    return f"₹{amount:,.2f}"
+
 async def send_order_confirmation_email(order: dict, clinic_email: str, clinic_name: str):
-    """Send order confirmation email with invoice details"""
+    """Send order confirmation email with invoice details including GST breakdown"""
     order_id = order.get("id", "")[:8].upper()
     items_html = ""
     
+    # Get order amounts
+    subtotal_amount = order.get("subtotal_amount", 0)
+    gst_amount = order.get("gst_amount", 0)
+    total_amount = order.get("total_amount", 0)
+    
+    # If subtotal_amount not stored, calculate from items
+    if not subtotal_amount:
+        subtotal_amount = sum(item.get("subtotal", item.get("price", 0) * item.get("quantity", 1)) for item in order.get("items", []))
+        gst_amount = total_amount - subtotal_amount if total_amount else 0
+    
     for item in order.get("items", []):
+        item_price = item.get('price', 0)
+        item_qty = item.get('quantity', 1)
+        item_subtotal = item.get('subtotal', item_price * item_qty)
+        item_gst = item.get('gst_amount', 0)
+        item_gst_pct = item.get('gst_percentage', 0)
+        item_total = item_subtotal + item_gst
+        
+        # GST badge for each item
+        gst_badge = f'<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px;">{item_gst_pct}% GST</span>' if item_gst_pct > 0 else ''
+        
         items_html += f"""
         <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;">{item.get('name', 'Product')}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">{item.get('quantity', 1)}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${item.get('price', 0):.2f}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${item.get('subtotal', 0):.2f}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">
+                {item.get('name', 'Product')}{gst_badge}
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">{item_qty}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">{format_inr(item_price)}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">{format_inr(item_subtotal)}</td>
         </tr>
         """
     
@@ -167,20 +228,35 @@ async def send_order_confirmation_email(order: dict, clinic_email: str, clinic_n
                         <tr style="background: #f8f9fa;">
                             <th style="padding: 12px; text-align: left;">Product</th>
                             <th style="padding: 12px; text-align: center;">Qty</th>
-                            <th style="padding: 12px; text-align: right;">Price</th>
+                            <th style="padding: 12px; text-align: right;">Unit Price</th>
                             <th style="padding: 12px; text-align: right;">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
                         {items_html}
                     </tbody>
-                    <tfoot>
-                        <tr style="background: #f8f9fa;">
-                            <td colspan="3" style="padding: 15px; text-align: right; font-weight: bold;">Total:</td>
-                            <td style="padding: 15px; text-align: right; font-weight: bold; color: #E07A5F; font-size: 18px;">${order.get('total_amount', 0):.2f}</td>
-                        </tr>
-                    </tfoot>
                 </table>
+                
+                <!-- GST Breakdown -->
+                <div style="background: #fff8f6; border: 1px solid #ffe0d9; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Subtotal:</td>
+                            <td style="padding: 8px 0; text-align: right; color: #333;">{format_inr(subtotal_amount)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">
+                                GST:
+                                <span style="font-size: 11px; color: #888;">(Goods & Services Tax)</span>
+                            </td>
+                            <td style="padding: 8px 0; text-align: right; color: #2e7d32;">{format_inr(gst_amount)}</td>
+                        </tr>
+                        <tr style="border-top: 2px solid #E07A5F;">
+                            <td style="padding: 12px 0 0 0; font-weight: bold; font-size: 16px; color: #333;">Grand Total:</td>
+                            <td style="padding: 12px 0 0 0; text-align: right; font-weight: bold; font-size: 18px; color: #E07A5F;">{format_inr(total_amount)}</td>
+                        </tr>
+                    </table>
+                </div>
                 
                 <!-- Shipping Address -->
                 <h3 style="color: #333; margin: 25px 0 15px 0;">Shipping Address</h3>
@@ -2091,6 +2167,9 @@ async def get_checkout_status(session_id: str, request: Request, user=Depends(ge
                     {"$set": {"payment_status": "paid", "status": "confirmed"}}
                 )
                 
+                # Deduct inventory for purchased items
+                await deduct_inventory(order)
+                
                 # Send order confirmation email
                 clinic = await db.clinics.find_one({"id": order["clinic_id"]})
                 if clinic:
@@ -2137,9 +2216,12 @@ async def stripe_webhook(request: Request):
                     {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
                 )
                 
-                # Send order confirmation email
+                # Send order confirmation email and deduct inventory
                 order = await db.orders.find_one({"id": order_id})
                 if order:
+                    # Deduct inventory for purchased items
+                    await deduct_inventory(order)
+                    
                     clinic = await db.clinics.find_one({"id": order["clinic_id"]})
                     if clinic:
                         clinic_email = clinic.get("email", "")
